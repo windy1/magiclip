@@ -1,16 +1,30 @@
+extern crate clap;
 extern crate tokio;
 
+use clap::Clap;
 use magiclip::serv;
 use magiclip::service::AvahiMdnsService;
 use std::io;
 
 #[tokio::main]
 async fn main() -> Result<(), io::Error> {
-    tokio::spawn(async {
-        AvahiMdnsService::new("test", "_magiclip._tcp", 42069)
+    let opts = Opts::parse();
+    let port = opts.port;
+
+    tokio::spawn(async move {
+        AvahiMdnsService::new("test", "_magiclip._tcp", port)
             .unwrap()
             .start();
     });
 
-    serv::start("192.168.0.4", 42069).await
+    serv::start(&opts.host, opts.port).await
+}
+
+#[derive(Clap)]
+#[clap(version = "1.0", author = "Walker Crouse <walkercrouse@hotmail.com>")]
+struct Opts {
+    #[clap(short, long, default_value = "127.0.0.1")]
+    host: String,
+    #[clap(short, long, default_value = "1337")]
+    port: u16,
 }
