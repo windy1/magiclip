@@ -8,6 +8,8 @@ use libc::{c_int, c_void};
 use std::ffi::CString;
 use std::ptr;
 
+// TODO: better error reporting - missing bindings
+
 const AVAHI_ERR_COLLISION: i32 = -8;
 
 pub struct AvahiMdnsService {
@@ -143,4 +145,5 @@ extern "C" fn entry_group_callback(
     _state: AvahiEntryGroupState,
     _userdata: *mut c_void,
 ) {
+    // TODO: handle collisions - missing binding
 }

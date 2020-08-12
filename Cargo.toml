@@ -8,5 +8,6 @@ edition = "2018"
 
 [dependencies]
 clipboard = "0.5.0"
+tokio = { version = "0.2.22", features = ["full"] }
 avahi-sys = { git = "https://github.com/windy1/avahi-sys" }
 libc = "*"

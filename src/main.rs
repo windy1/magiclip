@@ -1,15 +1,16 @@
-extern crate avahi_sys;
-extern crate clipboard;
-extern crate libc;
+extern crate tokio;
 
-use clipboard::{ClipboardContext, ClipboardProvider};
+use magiclip::serv;
 use magiclip::service::AvahiMdnsService;
+use std::io;
 
-fn main() {
-    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-    println!("{:?}", ctx.get_contents());
+#[tokio::main]
+async fn main() -> Result<(), io::Error> {
+    tokio::spawn(async {
+        AvahiMdnsService::new("test", "_magiclip._tcp", 42069)
+            .unwrap()
+            .start();
+    });
 
-    AvahiMdnsService::new("test", "_magiclip._tcp", 42069)
-        .unwrap()
-        .start();
+    serv::start("192.168.0.4", 42069).await
 }
