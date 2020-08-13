@@ -1,7 +1,7 @@
 extern crate tokio;
 
+use magiclip::mdns::AvahiMdnsService;
 use magiclip::serv;
-use magiclip::service::AvahiMdnsService;
 use std::io;
 
 #[tokio::main]

@@ -1,16 +1,16 @@
+use super::browser::AvahiMdnsBrowser;
+use super::util;
 use avahi_sys::{
-    avahi_client_free, avahi_client_new, avahi_entry_group_add_service, avahi_entry_group_commit,
+    avahi_client_free, avahi_entry_group_add_service, avahi_entry_group_commit,
     avahi_entry_group_is_empty, avahi_entry_group_new, avahi_simple_poll_free,
-    avahi_simple_poll_get, avahi_simple_poll_loop, avahi_simple_poll_new, AvahiClient,
-    AvahiClientFlags, AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState, AvahiSimplePoll,
+    avahi_simple_poll_loop, AvahiClient, AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState,
+    AvahiSimplePoll,
 };
 use libc::{c_int, c_void};
 use std::ffi::CString;
 use std::ptr;
 
 // TODO: better error reporting - missing bindings
-
-const AVAHI_ERR_COLLISION: i32 = -8;
 
 pub struct AvahiMdnsService {
     client: *mut AvahiClient,
@@ -30,11 +30,7 @@ impl AvahiMdnsService {
     pub fn new(name: &str, kind: &str, port: u16) -> Option<Self> {
         let mut err: c_int = 0;
 
-        let poller = unsafe { avahi_simple_poll_new() };
-
-        if poller == ptr::null_mut() {
-            return None;
-        }
+        let poller = util::new_poller()?;
 
         let user_data = Box::into_raw(Box::new(UserData {
             name: CString::new(name.to_string()).unwrap(),
@@ -43,19 +39,7 @@ impl AvahiMdnsService {
             group: ptr::null_mut(),
         })) as *mut c_void;
 
-        let client = unsafe {
-            avahi_client_new(
-                avahi_simple_poll_get(poller),
-                AvahiClientFlags(0),
-                Some(client_callback),
-                user_data,
-                &mut err,
-            )
-        };
-
-        if client == ptr::null_mut() {
-            return None;
-        }
+        let client = util::new_client(poller, Some(client_callback), user_data, &mut err)?;
 
         match err {
             0 => Some(Self {
@@ -116,8 +100,8 @@ fn create_service(client: *mut AvahiClient, user_data: &mut UserData) {
         let ret = unsafe {
             avahi_entry_group_add_service(
                 user_data.group,
-                -1,
-                -1,
+                util::AVAHI_IF_UNSPEC,
+                util::AVAHI_PROTO_UNSPEC,
                 0,
                 user_data.name.as_ptr(),
                 user_data.kind.as_ptr(),
@@ -128,7 +112,7 @@ fn create_service(client: *mut AvahiClient, user_data: &mut UserData) {
         };
 
         if ret < 0 {
-            if ret == AVAHI_ERR_COLLISION {
+            if ret == util::AVAHI_ERR_COLLISION {
                 panic!("could not register service due to collision");
             }
             panic!("failed to register service");
@@ -142,8 +126,16 @@ fn create_service(client: *mut AvahiClient, user_data: &mut UserData) {
 
 extern "C" fn entry_group_callback(
     _group: *mut AvahiEntryGroup,
-    _state: AvahiEntryGroupState,
+    state: AvahiEntryGroupState,
     _userdata: *mut c_void,
 ) {
     // TODO: handle collisions - missing binding
+
+    match state {
+        avahi_sys::AvahiEntryGroupState_AVAHI_ENTRY_GROUP_ESTABLISHED => {
+            println!("GROUP_ESTABLISHED");
+            AvahiMdnsBrowser::new("_magiclip._tcp").unwrap().start();
+        }
+        _ => {}
+    }
 }

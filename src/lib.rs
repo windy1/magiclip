@@ -3,5 +3,5 @@ extern crate clipboard;
 extern crate libc;
 extern crate tokio;
 
+pub mod mdns;
 pub mod serv;
-pub mod service;
