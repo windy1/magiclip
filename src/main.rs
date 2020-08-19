@@ -1,16 +1,9 @@
 extern crate tokio;
 
-use magiclip::mdns::AvahiMdnsService;
-use magiclip::serv;
+use magiclip::app;
 use std::io;
 
 #[tokio::main]
 async fn main() -> Result<(), io::Error> {
-    tokio::spawn(async {
-        AvahiMdnsService::new("test", "_magiclip._tcp", 42069)
-            .unwrap()
-            .start();
-    });
-
-    serv::start("0.0.0.0", 42069).await
+    app::start().await
 }

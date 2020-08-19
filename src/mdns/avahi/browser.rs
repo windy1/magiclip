@@ -1,4 +1,4 @@
-use super::util;
+use super::{util, ServiceResolution};
 use avahi_sys::{
     avahi_address_snprint, avahi_client_free, avahi_service_browser_free,
     avahi_service_browser_new, avahi_service_resolver_free, avahi_service_resolver_new,
@@ -16,10 +16,19 @@ pub struct AvahiMdnsBrowser {
     poller: *mut AvahiSimplePoll,
     #[allow(dead_code)]
     browser: *mut AvahiServiceBrowser,
+    user_data: *mut UserData,
+}
+
+struct UserData {
+    client: *mut AvahiClient,
+    resolver_found_callback: *mut dyn Fn(ServiceResolution),
 }
 
 impl AvahiMdnsBrowser {
-    pub fn new(kind: &str) -> Option<Self> {
+    pub fn new(
+        kind: &str,
+        resolver_found_callback: Box<dyn Fn(ServiceResolution)>,
+    ) -> Option<Self> {
         let mut err: c_int = 0;
 
         let poller = util::new_poller()?;
@@ -32,6 +41,11 @@ impl AvahiMdnsBrowser {
 
         let c_kind = CString::new(kind.to_string()).unwrap();
 
+        let user_data = Box::into_raw(Box::new(UserData {
+            client,
+            resolver_found_callback: Box::into_raw(resolver_found_callback),
+        }));
+
         let browser = unsafe {
             avahi_service_browser_new(
                 client,
@@ -41,7 +55,7 @@ impl AvahiMdnsBrowser {
                 ptr::null_mut(),
                 0,
                 Some(browse_callback),
-                client as *mut c_void,
+                user_data as *mut c_void,
             )
         };
 
@@ -52,6 +66,7 @@ impl AvahiMdnsBrowser {
                 client,
                 poller,
                 browser,
+                user_data,
             })
         }
     }
@@ -75,6 +90,10 @@ impl Drop for AvahiMdnsBrowser {
             if self.browser != ptr::null_mut() {
                 avahi_service_browser_free(self.browser);
             }
+
+            if self.user_data != ptr::null_mut() {
+                Box::from_raw(self.user_data);
+            }
         }
     }
 }
@@ -92,26 +111,9 @@ extern "C" fn browse_callback(
 ) {
     match event {
         avahi_sys::AvahiBrowserEvent_AVAHI_BROWSER_NEW => {
-            let (name_r, kind_r, domain_r) = unsafe {
-                (
-                    CStr::from_ptr(name),
-                    CStr::from_ptr(kind),
-                    CStr::from_ptr(domain),
-                )
-            };
-
-            println!(
-                "service found: `{}` of type `{}` in domain `{}`",
-                name_r.to_str().unwrap(),
-                kind_r.to_str().unwrap(),
-                domain_r.to_str().unwrap()
-            );
-
-            let client = userdata as *mut AvahiClient;
-
             let resolver = unsafe {
                 avahi_service_resolver_new(
-                    client,
+                    (&mut *(userdata as *mut UserData)).client,
                     interface,
                     protocol,
                     name,
@@ -120,7 +122,7 @@ extern "C" fn browse_callback(
                     util::AVAHI_PROTO_UNSPEC,
                     0,
                     Some(resolve_callback),
-                    client as *mut c_void,
+                    userdata,
                 )
             };
 
@@ -138,39 +140,31 @@ extern "C" fn resolve_callback(
     _interface: AvahiIfIndex,
     _protocol: AvahiProtocol,
     event: AvahiResolverEvent,
-    name: *const ::libc::c_char,
-    kind: *const ::libc::c_char,
-    domain: *const ::libc::c_char,
-    _host_name: *const ::libc::c_char,
+    name: *const c_char,
+    kind: *const c_char,
+    domain: *const c_char,
+    host_name: *const c_char,
     addr: *const AvahiAddress,
-    _port: u16,
+    port: u16,
     _txt: *mut AvahiStringList,
     _flags: AvahiLookupResultFlags,
-    _userdata: *mut ::libc::c_void,
+    userdata: *mut c_void,
 ) {
-    let (name_r, kind_r, domain_r) = unsafe {
+    let (name_r, kind_r, domain_r, host_name_r) = unsafe {
         (
-            CStr::from_ptr(name),
-            CStr::from_ptr(kind),
-            CStr::from_ptr(domain),
+            CStr::from_ptr(name).to_str().unwrap(),
+            CStr::from_ptr(kind).to_str().unwrap(),
+            CStr::from_ptr(domain).to_str().unwrap(),
+            CStr::from_ptr(host_name).to_str().unwrap(),
         )
     };
 
     match event {
         avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FAILURE => println!(
             "failed to resolve service `{}` of type `{}` in domain `{}`",
-            name_r.to_str().unwrap(),
-            kind_r.to_str().unwrap(),
-            domain_r.to_str().unwrap()
+            name_r, kind_r, domain_r
         ),
         avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FOUND => {
-            println!(
-                "Service `{}` of type `{}` in domain `{}`:",
-                name_r.to_str().unwrap(),
-                kind_r.to_str().unwrap(),
-                domain_r.to_str().unwrap()
-            );
-
             let address =
                 unsafe { CString::from_vec_unchecked(vec![0; util::AVAHI_ADDRESS_STR_MAX]) };
 
@@ -182,7 +176,28 @@ extern "C" fn resolve_callback(
                 )
             };
 
-            println!("address = {}", address.into_string().unwrap());
+            let address = address
+                .into_string()
+                .unwrap()
+                .trim_matches(char::from(0))
+                .to_string();
+
+            let result = ServiceResolution::builder()
+                .name(name_r.to_string())
+                .kind(kind_r.to_string())
+                .domain(domain_r.to_string())
+                .host_name(host_name_r.to_string())
+                .address(address)
+                .port(port)
+                .build()
+                .unwrap();
+
+            let callback = unsafe {
+                let user_data = &mut *(userdata as *mut UserData);
+                &*(user_data.resolver_found_callback)
+            };
+
+            callback(result);
         }
         _ => {}
     }
