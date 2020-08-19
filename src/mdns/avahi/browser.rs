@@ -1,6 +1,7 @@
 use super::util;
 use avahi_sys::{
-    avahi_address_snprint, avahi_service_browser_new, avahi_service_resolver_new,
+    avahi_address_snprint, avahi_client_free, avahi_service_browser_free,
+    avahi_service_browser_new, avahi_service_resolver_free, avahi_service_resolver_new,
     avahi_simple_poll_free, avahi_simple_poll_loop, AvahiAddress, AvahiBrowserEvent, AvahiClient,
     AvahiClientState, AvahiIfIndex, AvahiLookupResultFlags, AvahiProtocol, AvahiResolverEvent,
     AvahiServiceBrowser, AvahiServiceResolver, AvahiSimplePoll, AvahiStringList,
@@ -19,8 +20,6 @@ pub struct AvahiMdnsBrowser {
 
 impl AvahiMdnsBrowser {
     pub fn new(kind: &str) -> Option<Self> {
-        println!("CREATING_BROWSER");
-
         let mut err: c_int = 0;
 
         let poller = util::new_poller()?;
@@ -58,8 +57,25 @@ impl AvahiMdnsBrowser {
     }
 
     pub fn start(&mut self) {
-        println!("STARTING_BROWSER");
         unsafe { avahi_simple_poll_loop(self.poller) };
+    }
+}
+
+impl Drop for AvahiMdnsBrowser {
+    fn drop(&mut self) {
+        unsafe {
+            if self.client != ptr::null_mut() {
+                avahi_client_free(self.client);
+            }
+
+            if self.poller != ptr::null_mut() {
+                avahi_simple_poll_free(self.poller);
+            }
+
+            if self.browser != ptr::null_mut() {
+                avahi_service_browser_free(self.browser);
+            }
+        }
     }
 }
 
@@ -112,12 +128,13 @@ extern "C" fn browse_callback(
                 panic!("could not create new resolver");
             }
         }
+        avahi_sys::AvahiBrowserEvent_AVAHI_BROWSER_FAILURE => panic!("browser failure"),
         _ => {}
     }
 }
 
 extern "C" fn resolve_callback(
-    _resolver: *mut AvahiServiceResolver,
+    resolver: *mut AvahiServiceResolver,
     _interface: AvahiIfIndex,
     _protocol: AvahiProtocol,
     event: AvahiResolverEvent,
@@ -169,11 +186,17 @@ extern "C" fn resolve_callback(
         }
         _ => {}
     }
+
+    unsafe { avahi_service_resolver_free(resolver) };
 }
 
 extern "C" fn client_callback(
     _client: *mut AvahiClient,
-    _state: AvahiClientState,
+    state: AvahiClientState,
     _userdata: *mut c_void,
 ) {
+    match state {
+        avahi_sys::AvahiClientState_AVAHI_CLIENT_FAILURE => panic!("client failure"),
+        _ => {}
+    }
 }

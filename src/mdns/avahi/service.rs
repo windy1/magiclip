@@ -1,10 +1,9 @@
-use super::browser::AvahiMdnsBrowser;
 use super::util;
 use avahi_sys::{
     avahi_client_free, avahi_entry_group_add_service, avahi_entry_group_commit,
-    avahi_entry_group_is_empty, avahi_entry_group_new, avahi_simple_poll_free,
-    avahi_simple_poll_loop, AvahiClient, AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState,
-    AvahiSimplePoll,
+    avahi_entry_group_free, avahi_entry_group_is_empty, avahi_entry_group_new,
+    avahi_entry_group_reset, avahi_simple_poll_free, avahi_simple_poll_loop, AvahiClient,
+    AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState, AvahiSimplePoll,
 };
 use libc::{c_int, c_void};
 use std::ffi::CString;
@@ -15,7 +14,7 @@ use std::ptr;
 pub struct AvahiMdnsService {
     client: *mut AvahiClient,
     poller: *mut AvahiSimplePoll,
-    user_data: *mut c_void,
+    user_data: *mut UserData,
 }
 
 #[derive(Debug)]
@@ -37,9 +36,14 @@ impl AvahiMdnsService {
             kind: CString::new(kind.to_string()).unwrap(),
             port,
             group: ptr::null_mut(),
-        })) as *mut c_void;
+        }));
 
-        let client = util::new_client(poller, Some(client_callback), user_data, &mut err)?;
+        let client = util::new_client(
+            poller,
+            Some(client_callback),
+            user_data as *mut c_void,
+            &mut err,
+        )?;
 
         match err {
             0 => Some(Self {
@@ -62,9 +66,21 @@ impl AvahiMdnsService {
 impl Drop for AvahiMdnsService {
     fn drop(&mut self) {
         unsafe {
-            avahi_client_free(self.client);
-            avahi_simple_poll_free(self.poller);
-            Box::from_raw(self.user_data);
+            if self.client != ptr::null_mut() {
+                avahi_client_free(self.client);
+            }
+
+            if self.poller != ptr::null_mut() {
+                avahi_simple_poll_free(self.poller);
+            }
+
+            if self.user_data != ptr::null_mut() {
+                let ud = &mut *self.user_data;
+                if ud.group != ptr::null_mut() {
+                    avahi_entry_group_free(ud.group);
+                }
+                Box::from_raw(self.user_data);
+            }
         }
     }
 }
@@ -74,9 +90,14 @@ extern "C" fn client_callback(
     state: AvahiClientState,
     userdata: *mut c_void,
 ) {
+    let user_data = unsafe { &mut *(userdata as *mut UserData) };
     match state {
-        avahi_sys::AvahiClientState_AVAHI_CLIENT_S_RUNNING => {
-            create_service(client, unsafe { &mut *(userdata as *mut UserData) })
+        avahi_sys::AvahiClientState_AVAHI_CLIENT_S_RUNNING => create_service(client, user_data),
+        avahi_sys::AvahiClientState_AVAHI_CLIENT_FAILURE => panic!("client failure"),
+        avahi_sys::AvahiClientState_AVAHI_CLIENT_S_REGISTERING => {
+            if userdata != ptr::null_mut() && user_data.group != ptr::null_mut() {
+                unsafe { avahi_entry_group_reset(user_data.group) };
+            }
         }
         _ => {}
     }
@@ -134,7 +155,6 @@ extern "C" fn entry_group_callback(
     match state {
         avahi_sys::AvahiEntryGroupState_AVAHI_ENTRY_GROUP_ESTABLISHED => {
             println!("GROUP_ESTABLISHED");
-            AvahiMdnsBrowser::new("_magiclip._tcp").unwrap().start();
         }
         _ => {}
     }
