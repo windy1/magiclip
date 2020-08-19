@@ -12,5 +12,5 @@ async fn main() -> Result<(), io::Error> {
             .start();
     });
 
-    serv::start("192.168.0.4", 42069).await
+    serv::start("0.0.0.0", 42069).await
 }
