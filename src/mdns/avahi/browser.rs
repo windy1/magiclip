@@ -1,4 +1,5 @@
-use super::{util, ServiceResolution};
+use super::util;
+use crate::mdns::ServiceResolution;
 use avahi_sys::{
     avahi_address_snprint, avahi_client_free, avahi_service_browser_free,
     avahi_service_browser_new, avahi_service_resolver_free, avahi_service_resolver_new,
