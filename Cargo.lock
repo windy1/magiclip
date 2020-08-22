@@ -38,7 +38,7 @@ dependencies = [
 [[package]]
 name = "avahi-sys"
 version = "0.9.0"
-source = "git+https://github.com/windy1/avahi-sys#b997f9a92a777421dd9012480650b9d965b01f5f"
+source = "git+https://github.com/windy1/avahi-sys#b1581362e8d80f8f69e981e77457b0dc972aebf8"
 dependencies = [
  "bindgen",
  "libc",

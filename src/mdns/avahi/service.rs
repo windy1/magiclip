@@ -11,7 +11,7 @@ use std::ptr;
 
 // TODO: better error reporting - missing bindings
 
-pub struct AvahiMdnsService {
+pub struct MdnsService {
     client: *mut AvahiClient,
     poller: *mut AvahiSimplePoll,
     user_data: *mut UserData,
@@ -25,7 +25,7 @@ pub struct UserData {
     group: *mut AvahiEntryGroup,
 }
 
-impl AvahiMdnsService {
+impl MdnsService {
     pub fn new(name: &str, kind: &str, port: u16) -> Option<Self> {
         let mut err: c_int = 0;
 
@@ -63,7 +63,7 @@ impl AvahiMdnsService {
     }
 }
 
-impl Drop for AvahiMdnsService {
+impl Drop for MdnsService {
     fn drop(&mut self) {
         unsafe {
             if self.client != ptr::null_mut() {

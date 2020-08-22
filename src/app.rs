@@ -1,28 +1,20 @@
-#[cfg(target_os = "unix")]
-use crate::mdns::{AvahiMdnsBrowser, AvahiMdnsService, ServiceResolution};
+#[cfg(target_os = "linux")]
+use crate::mdns::{MdnsBrowser, MdnsService, ServiceResolution};
 use crate::serv;
 use std::io;
 
 static SERVICE_TYPE: &'static str = "_magiclip._tcp";
 
+#[cfg(target_os = "linux")]
 pub async fn start() -> Result<(), io::Error> {
-    if cfg!(unix) {
-        #[cfg(target_os = "unix")]
-        return start_unix();
-    }
-    Ok(())
-}
-
-#[cfg(target_os = "unix")]
-pub async fn start_unix() -> Result<(), io::Error> {
     tokio::spawn(async {
-        AvahiMdnsService::new("test", SERVICE_TYPE, 42069)
+        MdnsService::new("test", SERVICE_TYPE, 42069)
             .unwrap()
             .start();
     });
 
     tokio::spawn(async {
-        AvahiMdnsBrowser::new(SERVICE_TYPE, Box::new(&on_service_discovered))
+        MdnsBrowser::new(SERVICE_TYPE, Box::new(&on_service_discovered))
             .unwrap()
             .start()
     });
@@ -30,7 +22,12 @@ pub async fn start_unix() -> Result<(), io::Error> {
     serv::start("0.0.0.0", 42069).await
 }
 
-#[cfg(target_os = "unix")]
+#[cfg(target_os = "macos")]
+pub async fn start() -> Result<(), io::Error> {
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
 pub fn on_service_discovered(service: ServiceResolution) {
     if service.is_local() {
         return;

@@ -10,7 +10,7 @@ use libc::{c_char, c_int, c_void};
 use std::ffi::{CStr, CString};
 use std::{mem, ptr};
 
-pub struct AvahiMdnsBrowser {
+pub struct MdnsBrowser {
     #[allow(dead_code)]
     client: *mut AvahiClient,
     poller: *mut AvahiSimplePoll,
@@ -24,7 +24,7 @@ struct UserData {
     resolver_found_callback: *mut dyn Fn(ServiceResolution),
 }
 
-impl AvahiMdnsBrowser {
+impl MdnsBrowser {
     pub fn new(
         kind: &str,
         resolver_found_callback: Box<dyn Fn(ServiceResolution)>,
@@ -76,7 +76,7 @@ impl AvahiMdnsBrowser {
     }
 }
 
-impl Drop for AvahiMdnsBrowser {
+impl Drop for MdnsBrowser {
     fn drop(&mut self) {
         unsafe {
             if self.client != ptr::null_mut() {
