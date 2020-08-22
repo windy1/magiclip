@@ -11,7 +11,11 @@ pub struct AppServer {
 
 impl AppServer {
     pub fn new(host: &str, port: u16) -> Self {
-        Self { host: host.to_string(), port, clipboard: ClipboardProvider::new().unwrap() }
+        Self {
+            host: host.to_string(),
+            port,
+            clipboard: ClipboardProvider::new().unwrap(),
+        }
     }
 
     pub async fn start(&mut self) -> io::Result<()> {
@@ -21,7 +25,7 @@ impl AppServer {
             let (mut socket, addr) = listener.accept().await?;
             let contents = self.clipboard.get_contents().unwrap();
 
-            println!("new connection: {}", addr);
+            println!("New connection: {}", addr);
 
             tokio::spawn(async move { socket.write(contents.as_bytes()).await });
         }

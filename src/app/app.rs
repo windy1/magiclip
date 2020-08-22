@@ -1,5 +1,5 @@
-use crate::mdns::{MdnsBrowser, MdnsService, ServiceResolution};
 use super::AppServer;
+use crate::mdns::{MdnsBrowser, MdnsService, ServiceResolution};
 use std::io;
 
 static SERVICE_TYPE: &'static str = "_magiclip._tcp";

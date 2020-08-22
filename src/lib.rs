@@ -2,6 +2,8 @@
 extern crate derive_new;
 #[macro_use]
 extern crate derive_builder;
+#[macro_use]
+extern crate getset;
 extern crate avahi_sys;
 extern crate clipboard;
 extern crate core_foundation;
