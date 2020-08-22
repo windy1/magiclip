@@ -3,9 +3,6 @@ name = "magiclip"
 version = "0.1.0"
 authors = ["Walker Crouse <walker.crouse@coop.co.uk>"]
 edition = "2018"
-#
-# [dev-dependencies]
-# pre-commit = "0.5.2"
 
 [dependencies]
 libc = "*"
