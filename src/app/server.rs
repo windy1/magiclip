@@ -6,7 +6,6 @@ use tokio::net::TcpListener;
 pub struct AppServer {
     host: String,
     port: u16,
-    clipboard: ClipboardContext,
 }
 
 impl AppServer {
@@ -14,7 +13,6 @@ impl AppServer {
         Self {
             host: host.to_string(),
             port,
-            clipboard: ClipboardProvider::new().unwrap(),
         }
     }
 
@@ -23,11 +21,14 @@ impl AppServer {
 
         loop {
             let (mut socket, addr) = listener.accept().await?;
-            let contents = self.clipboard.get_contents().unwrap();
 
             println!("New connection: {}", addr);
 
-            tokio::spawn(async move { socket.write(contents.as_bytes()).await });
+            tokio::spawn(async move {
+                let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
+                let contents: String = clipboard.get_contents().unwrap();
+                socket.write(contents.as_bytes()).await
+            });
         }
     }
 }
