@@ -70,9 +70,7 @@ impl MdnsBrowser {
             })
         }
     }
-}
 
-impl TMdnsBrowser for MdnsBrowser {
     pub fn start(&mut self) {
         unsafe { avahi_simple_poll_loop(self.poller) };
     }
