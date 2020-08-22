@@ -9,6 +9,12 @@ pub struct ServiceResolution {
 }
 
 impl ServiceResolution {
+    pub fn builder() -> ServiceResolutionBuilder {
+        ServiceResolutionBuilder::default()
+    }
+}
+
+impl TServiceResolution for ServiceResolution {
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -35,9 +41,5 @@ impl ServiceResolution {
 
     pub fn is_local(&self) -> bool {
         self.domain == "local"
-    }
-
-    pub fn builder() -> ServiceResolutionBuilder {
-        ServiceResolutionBuilder::default()
     }
 }

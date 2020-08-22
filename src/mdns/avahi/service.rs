@@ -57,7 +57,9 @@ impl MdnsService {
             }
         }
     }
+}
 
+impl TMdnsService for MdnsService {
     pub fn start(&self) {
         unsafe { avahi_simple_poll_loop(self.poller) };
     }
