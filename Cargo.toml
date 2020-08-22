@@ -3,15 +3,25 @@ name = "magiclip"
 version = "0.1.0"
 authors = ["Walker Crouse <walker.crouse@coop.co.uk>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+#
+# [dev-dependencies]
+# pre-commit = "0.5.2"
 
 [dependencies]
+libc = "*"
 clipboard = "0.5.0"
 tokio = { version = "0.2.22", features = ["full"] }
 derive-new = "0.5.8"
 derive_builder = "0.9.0"
 getset = "0.1.1"
-core-foundation = "0.9.0"
+pre-commit = "0.5.2"
+
+[target.'cfg(unix)'.dependencies]
 avahi-sys = { git = "https://github.com/windy1/avahi-sys" }
-libc = "*"
+
+[target.'cfg(macos)'.dependencies]
+core-foundation = "0.9.0"
+
+[package.metadata.precommit]
+fmt = "cargo fmt"
+test = "cargo test"
