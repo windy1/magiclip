@@ -8,7 +8,7 @@ extern crate getset;
 extern crate avahi_sys;
 extern crate clipboard;
 #[cfg(target_os = "macos")]
-extern crate core_foundation;
+extern crate bonjour_sys;
 extern crate libc;
 extern crate tokio;
 

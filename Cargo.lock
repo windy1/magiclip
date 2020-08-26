@@ -81,6 +81,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 
 [[package]]
+name = "bonjour-sys"
+version = "0.1.0"
+source = "git+https://github.com/windy1/bonjour-sys#c6d97b604e55537218f3f79fa8ed6267220d4c75"
+dependencies = [
+ "bindgen",
+ "libc",
+]
+
+[[package]]
 name = "bytes"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -154,22 +163,6 @@ checksum = "e3a093d6fed558e5fe24c3dfc85a68bb68f1c824f440d3ba5aca189e2998786b"
 dependencies = [
  "winapi 0.3.9",
 ]
-
-[[package]]
-name = "core-foundation"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b5ed8e7e76c45974e15e41bfa8d5b0483cd90191639e01d8f5f1e606299d3fb"
-dependencies = [
- "core-foundation-sys",
- "libc",
-]
-
-[[package]]
-name = "core-foundation-sys"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a21fa21941700a3cd8fcb4091f361a6a712fac632f85d9f487cc892045d55c6"
 
 [[package]]
 name = "darling"
@@ -386,8 +379,8 @@ name = "magiclip"
 version = "0.1.0"
 dependencies = [
  "avahi-sys",
+ "bonjour-sys",
  "clipboard",
- "core-foundation",
  "derive-new",
  "derive_builder",
  "getset",

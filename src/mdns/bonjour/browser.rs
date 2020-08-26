@@ -15,6 +15,6 @@ impl MdnsBrowser {
     }
 
     pub fn start(&mut self) {
-        todo!()
+        println!("starting browser");
     }
 }
