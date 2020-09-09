@@ -6,9 +6,9 @@ extern crate derive_builder;
 extern crate getset;
 #[cfg(target_os = "linux")]
 extern crate avahi_sys;
-extern crate clipboard;
 #[cfg(target_os = "macos")]
 extern crate bonjour_sys;
+extern crate clipboard;
 extern crate libc;
 extern crate tokio;
 

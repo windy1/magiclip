@@ -14,10 +14,10 @@ getset = "0.1.1"
 pre-commit = "0.5.2"
 
 [target.'cfg(unix)'.dependencies]
-avahi-sys = { git = "https://github.com/windy1/avahi-sys" }
+avahi-sys = { path = "../avahi-sys" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-bonjour-sys = { git = "https://github.com/windy1/bonjour-sys" }
+bonjour-sys = { path = "../bonjour-sys" }
 
 [package.metadata.precommit]
 fmt = "cargo fmt"

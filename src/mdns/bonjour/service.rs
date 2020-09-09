@@ -1,16 +1,17 @@
 use bonjour_sys::{
-    DNSServiceErrorType, DNSServiceFlags, DNSServiceRef, DNSServiceRegister,
+    kDNSServiceProperty_DaemonVersion, DNSServiceCreateConnection, DNSServiceErrorType,
+    DNSServiceFlags, DNSServiceGetProperty, DNSServiceRef, DNSServiceRegister,
     DNSServiceRegisterReply,
 };
+use libc::{c_char, c_void};
 use std::ffi::CString;
-use std::os::raw::{c_char, c_void};
-use std::ptr;
+use std::{mem, ptr};
 
 const BOUNJOUR_IF_UNSPEC: u32 = 0;
 const BONJOUR_RENAME_FLAGS: DNSServiceFlags = 0;
 
 pub struct MdnsService {
-    service: *mut DNSServiceRef,
+    service: DNSServiceRef,
     name: CString,
     kind: CString,
     port: u16,
@@ -26,26 +27,23 @@ impl MdnsService {
         })
     }
 
-    pub fn start(&self) {
+    pub fn start(&mut self) {
         println!("registering service");
-
-        println!("name = {:?}", self.name);
-        println!("kind = {:?}", self.kind);
 
         let err = unsafe {
             DNSServiceRegister(
-                self.service,
-                BONJOUR_RENAME_FLAGS,
-                BOUNJOUR_IF_UNSPEC,
-                self.name.as_ptr(),
-                self.kind.as_ptr(),
-                ptr::null_mut(),
-                ptr::null_mut(),
-                self.port,
-                0,
-                ptr::null_mut(),
-                Some(register_callback),
-                ptr::null_mut(),
+                &mut self.service as *mut DNSServiceRef, // sdRef
+                BONJOUR_RENAME_FLAGS,                    // flags
+                BOUNJOUR_IF_UNSPEC,                      // interfaceIndex
+                ptr::null(),                             // name
+                self.kind.as_ptr(),                      // regtype
+                ptr::null(),                             // domain
+                ptr::null(),                             // host
+                self.port,                               // port
+                0,                                       // txtLen
+                ptr::null(),                             // txtRecord
+                Some(register_callback),                 // callback
+                ptr::null_mut(),                         // context
             )
         };
 

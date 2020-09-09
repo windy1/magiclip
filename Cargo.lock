@@ -38,7 +38,6 @@ dependencies = [
 [[package]]
 name = "avahi-sys"
 version = "0.9.0"
-source = "git+https://github.com/windy1/avahi-sys#b1581362e8d80f8f69e981e77457b0dc972aebf8"
 dependencies = [
  "bindgen",
  "libc",
@@ -83,7 +82,6 @@ checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 [[package]]
 name = "bonjour-sys"
 version = "0.1.0"
-source = "git+https://github.com/windy1/bonjour-sys#c6d97b604e55537218f3f79fa8ed6267220d4c75"
 dependencies = [
  "bindgen",
  "libc",

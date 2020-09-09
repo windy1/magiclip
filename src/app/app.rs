@@ -10,7 +10,7 @@ pub struct App {}
 impl App {
     pub async fn start(&mut self) -> Result<(), io::Error> {
         tokio::spawn(async {
-            MdnsService::new("test", SERVICE_TYPE, 42069)
+            MdnsService::new("magiclip", SERVICE_TYPE, 6060)
                 .unwrap()
                 .start();
         });
@@ -21,7 +21,7 @@ impl App {
                 .start()
         });
 
-        AppServer::new("0.0.0.0", 42069).start().await
+        AppServer::new("0.0.0.0", 6060).start().await
     }
 }
 
