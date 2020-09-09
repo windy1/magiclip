@@ -1,7 +1,7 @@
 use bonjour_sys::{
     kDNSServiceProperty_DaemonVersion, DNSServiceCreateConnection, DNSServiceErrorType,
-    DNSServiceFlags, DNSServiceGetProperty, DNSServiceRef, DNSServiceRegister,
-    DNSServiceRegisterReply,
+    DNSServiceFlags, DNSServiceGetProperty, DNSServiceProcessResult, DNSServiceRef,
+    DNSServiceRegister, DNSServiceRegisterReply,
 };
 use libc::{c_char, c_void};
 use std::ffi::CString;
@@ -47,7 +47,15 @@ impl MdnsService {
             )
         };
 
-        println!("err = {}", err);
+        if (err != 0) {
+            panic!("could not register service with error code: `{0}`", err);
+        }
+
+        let err = unsafe { DNSServiceProcessResult(self.service) };
+
+        if err != 0 {
+            panic!("could not start processing loop: `{0}`", err);
+        }
     }
 }
 
