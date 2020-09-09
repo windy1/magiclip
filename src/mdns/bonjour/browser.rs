@@ -1,6 +1,7 @@
 use crate::mdns::ServiceResolution;
 use bonjour_sys::{
     DNSServiceBrowse, DNSServiceErrorType, DNSServiceFlags, DNSServiceProcessResult, DNSServiceRef,
+    DNSServiceRefDeallocate,
 };
 use libc::{c_char, c_void};
 use std::ffi::CString;
@@ -48,6 +49,16 @@ impl MdnsBrowser {
             Err(format!("could not start processing loop: `{0}`", err).to_string())
         } else {
             Ok(())
+        }
+    }
+}
+
+impl Drop for MdnsBrowser {
+    fn drop(&mut self) {
+        unsafe {
+            if self.service != ptr::null_mut() {
+                DNSServiceRefDeallocate(self.service);
+            }
         }
     }
 }

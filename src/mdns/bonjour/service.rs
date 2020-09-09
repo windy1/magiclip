@@ -1,7 +1,7 @@
 use bonjour_sys::{
     kDNSServiceProperty_DaemonVersion, DNSServiceCreateConnection, DNSServiceErrorType,
     DNSServiceFlags, DNSServiceGetProperty, DNSServiceProcessResult, DNSServiceRef,
-    DNSServiceRegister, DNSServiceRegisterReply,
+    DNSServiceRefDeallocate, DNSServiceRegister, DNSServiceRegisterReply,
 };
 use libc::{c_char, c_void};
 use std::ffi::CString;
@@ -60,6 +60,16 @@ impl MdnsService {
             ))
         } else {
             Ok(())
+        }
+    }
+}
+
+impl Drop for MdnsService {
+    fn drop(&mut self) {
+        unsafe {
+            if self.service != ptr::null_mut() {
+                DNSServiceRefDeallocate(self.service);
+            }
         }
     }
 }
