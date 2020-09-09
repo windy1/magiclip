@@ -67,11 +67,14 @@ extern "C" fn browse_callback(
     _sd_ref: DNSServiceRef,
     _flags: DNSServiceFlags,
     _interface_index: u32,
-    _error_code: DNSServiceErrorType,
+    error: DNSServiceErrorType,
     _name: *const c_char,
     _regtype: *const c_char,
     _domain: *const c_char,
     _context: *mut c_void,
 ) {
     println!("browse_callback");
+    if error != 0 {
+        panic!("browse_callback reported error (code: {0})", error);
+    }
 }
