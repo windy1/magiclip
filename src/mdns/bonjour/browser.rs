@@ -13,18 +13,15 @@ pub struct MdnsBrowser {
 }
 
 impl MdnsBrowser {
-    pub fn new(
-        kind: &str,
-        resolver_found_callback: Box<dyn Fn(ServiceResolution)>,
-    ) -> Option<Self> {
-        Some(Self {
+    pub fn new(kind: &str, resolver_found_callback: Box<dyn Fn(ServiceResolution)>) -> Self {
+        Self {
             service: ptr::null_mut(),
             kind: CString::new(kind).unwrap(),
             resolver_found_callback,
-        })
+        }
     }
 
-    pub fn start(&mut self) {
+    pub fn start(&mut self) -> Result<(), String> {
         println!("starting browser");
 
         let err = unsafe {
@@ -40,13 +37,17 @@ impl MdnsBrowser {
         };
 
         if err != 0 {
-            panic!("could not browse services with error code: `{0}`", err);
+            return Err(
+                format!("could not browse services with error code: `{0}`", err).to_string(),
+            );
         }
 
         let err = unsafe { DNSServiceProcessResult(self.service) };
 
         if err != 0 {
-            panic!("could not start processing loop: `{0}`", err);
+            Err(format!("could not start processing loop: `{0}`", err).to_string())
+        } else {
+            Ok(())
         }
     }
 }

@@ -12,22 +12,20 @@ const BONJOUR_RENAME_FLAGS: DNSServiceFlags = 0;
 
 pub struct MdnsService {
     service: DNSServiceRef,
-    name: CString,
     kind: CString,
     port: u16,
 }
 
 impl MdnsService {
-    pub fn new(name: &str, kind: &str, port: u16) -> Option<Self> {
-        Some(Self {
+    pub fn new(kind: &str, port: u16) -> Self {
+        Self {
             service: ptr::null_mut(),
-            name: CString::new(name).unwrap(),
             kind: CString::new(kind).unwrap(),
             port,
-        })
+        }
     }
 
-    pub fn start(&mut self) {
+    pub fn start(&mut self) -> Result<(), String> {
         println!("registering service");
 
         let err = unsafe {
@@ -48,13 +46,20 @@ impl MdnsService {
         };
 
         if (err != 0) {
-            panic!("could not register service with error code: `{0}`", err);
+            return Err(
+                format!("could not register service with error code: `{0}`", err).to_string(),
+            );
         }
 
         let err = unsafe { DNSServiceProcessResult(self.service) };
 
         if err != 0 {
-            panic!("could not start processing loop: `{0}`", err);
+            Err(format!(
+                "could not start processing loop for service: `{0}`",
+                err
+            ))
+        } else {
+            Ok(())
         }
     }
 }
