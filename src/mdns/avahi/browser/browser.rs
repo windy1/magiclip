@@ -1,5 +1,8 @@
-use super::err::{ErrorCallback, HandleError};
-use super::util::{self, AvahiClientParams, AvahiServiceBrowserParams};
+use super::backend::AvahiServiceBrowserParams;
+use crate::mdns::client::AvahiClientParams;
+use crate::mdns::constants;
+use crate::mdns::err::{ErrorCallback, HandleError};
+use crate::mdns::poll;
 use crate::mdns::ServiceResolution;
 use avahi_sys::{
     avahi_address_snprint, avahi_client_free, avahi_service_browser_free,
@@ -47,7 +50,7 @@ impl MdnsBrowser {
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        self.poller = util::new_poller()?;
+        self.poller = poll::new_poller()?;
 
         unsafe {
             (*self.context).client = AvahiClientParams::builder()
@@ -61,8 +64,8 @@ impl MdnsBrowser {
         self.browser = unsafe {
             AvahiServiceBrowserParams::builder()
                 .client((*self.context).client)
-                .interface(util::AVAHI_IF_UNSPEC)
-                .protocol(util::AVAHI_PROTO_UNSPEC)
+                .interface(constants::AVAHI_IF_UNSPEC)
+                .protocol(constants::AVAHI_PROTO_UNSPEC)
                 .kind(self.kind.as_ptr())
                 .domain(ptr::null_mut())
                 .flags(0)
@@ -132,7 +135,7 @@ extern "C" fn browse_callback(
                     name,
                     kind,
                     domain,
-                    util::AVAHI_PROTO_UNSPEC,
+                    constants::AVAHI_PROTO_UNSPEC,
                     0,
                     Some(resolve_callback),
                     userdata,
@@ -181,7 +184,7 @@ extern "C" fn resolve_callback(
         ),
         avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FOUND => {
             let address =
-                unsafe { CString::from_vec_unchecked(vec![0; util::AVAHI_ADDRESS_STR_MAX]) };
+                unsafe { CString::from_vec_unchecked(vec![0; constants::AVAHI_ADDRESS_STR_MAX]) };
 
             unsafe {
                 avahi_address_snprint(

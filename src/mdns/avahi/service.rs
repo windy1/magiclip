@@ -1,5 +1,7 @@
+use super::client::AvahiClientParams;
+use super::constants;
 use super::err::{ErrorCallback, HandleError};
-use super::util::{self, AvahiClientParams};
+use super::poll;
 use avahi_sys::{
     avahi_client_free, avahi_entry_group_add_service, avahi_entry_group_commit,
     avahi_entry_group_free, avahi_entry_group_is_empty, avahi_entry_group_new,
@@ -55,7 +57,7 @@ impl MdnsService {
             }
         };
 
-        self.poller = util::new_poller()?;
+        self.poller = poll::new_poller()?;
 
         self.client = AvahiClientParams::builder()
             .poller(self.poller)
@@ -145,8 +147,8 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
         let ret = unsafe {
             avahi_entry_group_add_service(
                 context.group,
-                util::AVAHI_IF_UNSPEC,
-                util::AVAHI_PROTO_UNSPEC,
+                constants::AVAHI_IF_UNSPEC,
+                constants::AVAHI_PROTO_UNSPEC,
                 0,
                 context.name.as_ref().unwrap().as_ptr(),
                 context.kind.as_ptr(),
@@ -159,7 +161,7 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
         println!("Service added");
 
         if ret < 0 {
-            if ret == util::AVAHI_ERR_COLLISION {
+            if ret == constants::AVAHI_ERR_COLLISION {
                 context.handle_error("could not register service due to collision");
             } else {
                 context.handle_error("failed to register service");
