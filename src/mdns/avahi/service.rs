@@ -1,11 +1,13 @@
-use super::util;
+use super::err::{ErrorCallback, HandleError};
+use super::util::{self, AvahiClientParams};
 use avahi_sys::{
     avahi_client_free, avahi_entry_group_add_service, avahi_entry_group_commit,
     avahi_entry_group_free, avahi_entry_group_is_empty, avahi_entry_group_new,
     avahi_entry_group_reset, avahi_simple_poll_free, avahi_simple_poll_loop, AvahiClient,
     AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState, AvahiSimplePoll,
 };
-use libc::{c_int, c_void};
+use libc::c_void;
+use std::convert::TryInto;
 use std::ffi::CString;
 use std::ptr;
 
@@ -14,52 +16,59 @@ use std::ptr;
 pub struct MdnsService {
     client: *mut AvahiClient,
     poller: *mut AvahiSimplePoll,
-    user_data: *mut UserData,
+    context: *mut AvahiServiceContext,
 }
 
-#[derive(Debug)]
-pub struct UserData {
-    name: CString,
+struct AvahiServiceContext {
+    name: Option<CString>,
     kind: CString,
     port: u16,
     group: *mut AvahiEntryGroup,
+    error_callback: Option<Box<ErrorCallback>>,
 }
 
 impl MdnsService {
-    pub fn new(name: &str, kind: &str, port: u16) -> Option<Self> {
-        let mut err: c_int = 0;
-
-        let poller = util::new_poller()?;
-
-        let user_data = Box::into_raw(Box::new(UserData {
-            name: CString::new(name.to_string()).unwrap(),
-            kind: CString::new(kind.to_string()).unwrap(),
-            port,
-            group: ptr::null_mut(),
-        }));
-
-        let client = util::new_client(
-            poller,
-            Some(client_callback),
-            user_data as *mut c_void,
-            &mut err,
-        )?;
-
-        match err {
-            0 => Some(Self {
-                client,
-                poller,
-                user_data,
-            }),
-            _ => {
-                unsafe { avahi_simple_poll_free(poller) };
-                None
-            }
+    pub fn new(kind: &str, port: u16) -> Self {
+        Self {
+            client: ptr::null_mut(),
+            poller: ptr::null_mut(),
+            context: Box::into_raw(Box::new(AvahiServiceContext {
+                name: None,
+                kind: CString::new(kind.to_string()).unwrap(),
+                port,
+                group: ptr::null_mut(),
+                error_callback: None,
+            })),
         }
     }
 
-    pub fn start(&self) {
+    pub fn set_error_callback(&mut self, error_callback: Box<ErrorCallback>) {
+        unsafe { (*self.context).error_callback = Some(error_callback) };
+    }
+
+    pub fn set_name(&mut self, name: &str) {
+        unsafe { (*self.context).name = Some(CString::new(name.to_string()).unwrap()) };
+    }
+
+    pub fn start(&mut self) -> Result<(), String> {
+        unsafe {
+            if let None = (*self.context).name {
+                return Err("service name required when using Avahi".to_string());
+            }
+        };
+
+        self.poller = util::new_poller()?;
+
+        self.client = AvahiClientParams::builder()
+            .poller(self.poller)
+            .callback(Some(client_callback))
+            .context(self.context as *mut c_void)
+            .build()?
+            .try_into()?;
+
         unsafe { avahi_simple_poll_loop(self.poller) };
+
+        Ok(())
     }
 }
 
@@ -74,12 +83,22 @@ impl Drop for MdnsService {
                 avahi_simple_poll_free(self.poller);
             }
 
-            if self.user_data != ptr::null_mut() {
-                let ud = &mut *self.user_data;
-                if ud.group != ptr::null_mut() {
-                    avahi_entry_group_free(ud.group);
-                }
-                Box::from_raw(self.user_data);
+            Box::from_raw(self.context);
+        }
+    }
+}
+
+impl HandleError for AvahiServiceContext {
+    fn error_callback(&self) -> Option<&Box<ErrorCallback>> {
+        self.error_callback.as_ref()
+    }
+}
+
+impl Drop for AvahiServiceContext {
+    fn drop(&mut self) {
+        unsafe {
+            if self.group != ptr::null_mut() {
+                avahi_entry_group_free(self.group);
             }
         }
     }
@@ -90,57 +109,69 @@ extern "C" fn client_callback(
     state: AvahiClientState,
     userdata: *mut c_void,
 ) {
-    let user_data = unsafe { &mut *(userdata as *mut UserData) };
+    let context = unsafe { &mut *(userdata as *mut AvahiServiceContext) };
+
     match state {
-        avahi_sys::AvahiClientState_AVAHI_CLIENT_S_RUNNING => create_service(client, user_data),
-        avahi_sys::AvahiClientState_AVAHI_CLIENT_FAILURE => panic!("client failure"),
+        avahi_sys::AvahiClientState_AVAHI_CLIENT_S_RUNNING => create_service(client, context),
+        avahi_sys::AvahiClientState_AVAHI_CLIENT_FAILURE => context.handle_error("client failure"),
         avahi_sys::AvahiClientState_AVAHI_CLIENT_S_REGISTERING => {
-            if userdata != ptr::null_mut() && user_data.group != ptr::null_mut() {
-                unsafe { avahi_entry_group_reset(user_data.group) };
+            if userdata != ptr::null_mut() && context.group != ptr::null_mut() {
+                unsafe { avahi_entry_group_reset(context.group) };
             }
         }
         _ => {}
     }
 }
 
-fn create_service(client: *mut AvahiClient, user_data: &mut UserData) {
-    if user_data.group == ptr::null_mut() {
+fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
+    if context.group == ptr::null_mut() {
         println!("Creating group");
 
-        user_data.group =
+        context.group =
             unsafe { avahi_entry_group_new(client, Some(entry_group_callback), ptr::null_mut()) };
 
-        if user_data.group == ptr::null_mut() {
-            panic!("avahi_entry_group_new() failed");
+        if context.group == ptr::null_mut() {
+            context.handle_error("avahi_entry_group_new() failed");
+            return;
         }
     }
 
-    if unsafe { avahi_entry_group_is_empty(user_data.group) } != 0 {
+    if unsafe { avahi_entry_group_is_empty(context.group) } != 0 {
         println!("Adding service");
+
+        println!("name = {:?}", context.name);
+        println!("group = {:?}", context.group);
+        println!("kind = {:?}", context.kind);
+        println!("port = {:?}", context.port);
 
         let ret = unsafe {
             avahi_entry_group_add_service(
-                user_data.group,
+                context.group,
                 util::AVAHI_IF_UNSPEC,
                 util::AVAHI_PROTO_UNSPEC,
                 0,
-                user_data.name.as_ptr(),
-                user_data.kind.as_ptr(),
+                context.name.as_ref().unwrap().as_ptr(),
+                context.kind.as_ptr(),
                 ptr::null_mut(),
                 ptr::null_mut(),
-                user_data.port,
+                context.port,
             )
         };
 
+        println!("Service added");
+
         if ret < 0 {
             if ret == util::AVAHI_ERR_COLLISION {
-                panic!("could not register service due to collision");
+                context.handle_error("could not register service due to collision");
+            } else {
+                context.handle_error("failed to register service");
             }
-            panic!("failed to register service");
+
+            return;
         }
 
-        if unsafe { avahi_entry_group_commit(user_data.group) < 0 } {
-            panic!("failed to commit service");
+        if unsafe { avahi_entry_group_commit(context.group) < 0 } {
+            context.handle_error("failed to commit service");
         }
     }
 }

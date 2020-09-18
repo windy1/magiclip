@@ -1,89 +1,86 @@
-use super::util;
+use super::err::{ErrorCallback, HandleError};
+use super::util::{self, AvahiClientParams, AvahiServiceBrowserParams};
 use crate::mdns::ServiceResolution;
 use avahi_sys::{
     avahi_address_snprint, avahi_client_free, avahi_service_browser_free,
-    avahi_service_browser_new, avahi_service_resolver_free, avahi_service_resolver_new,
-    avahi_simple_poll_free, avahi_simple_poll_loop, AvahiAddress, AvahiBrowserEvent, AvahiClient,
-    AvahiClientState, AvahiIfIndex, AvahiLookupResultFlags, AvahiProtocol, AvahiResolverEvent,
-    AvahiServiceBrowser, AvahiServiceResolver, AvahiSimplePoll, AvahiStringList,
+    avahi_service_resolver_free, avahi_service_resolver_new, avahi_simple_poll_free,
+    avahi_simple_poll_loop, AvahiAddress, AvahiBrowserEvent, AvahiClient, AvahiClientState,
+    AvahiIfIndex, AvahiLookupResultFlags, AvahiProtocol, AvahiResolverEvent, AvahiServiceBrowser,
+    AvahiServiceResolver, AvahiSimplePoll, AvahiStringList,
 };
-use libc::{c_char, c_int, c_void};
+use libc::{c_char, c_void};
+use std::convert::TryInto;
 use std::ffi::{CStr, CString};
 use std::{mem, ptr};
 
+pub type ResolverFoundCallback = dyn Fn(ServiceResolution);
+
 pub struct MdnsBrowser {
-    #[allow(dead_code)]
-    client: *mut AvahiClient,
     poller: *mut AvahiSimplePoll,
-    #[allow(dead_code)]
     browser: *mut AvahiServiceBrowser,
-    user_data: *mut UserData,
+    kind: CString,
+    context: *mut AvahiBrowserContext,
 }
 
-struct UserData {
+struct AvahiBrowserContext {
     client: *mut AvahiClient,
-    resolver_found_callback: *mut dyn Fn(ServiceResolution),
+    resolver_found_callback: Box<ResolverFoundCallback>,
+    error_callback: Option<Box<ErrorCallback>>,
 }
 
 impl MdnsBrowser {
-    pub fn new(
-        kind: &str,
-        resolver_found_callback: Box<dyn Fn(ServiceResolution)>,
-    ) -> Option<Self> {
-        let mut err: c_int = 0;
-
-        let poller = util::new_poller()?;
-        let client = util::new_client(poller, Some(client_callback), ptr::null_mut(), &mut err)?;
-
-        if err != 0 {
-            unsafe { avahi_simple_poll_free(poller) };
-            return None;
-        }
-
-        let c_kind = CString::new(kind.to_string()).unwrap();
-
-        let user_data = Box::into_raw(Box::new(UserData {
-            client,
-            resolver_found_callback: Box::into_raw(resolver_found_callback),
-        }));
-
-        let browser = unsafe {
-            avahi_service_browser_new(
-                client,
-                util::AVAHI_IF_UNSPEC,
-                util::AVAHI_PROTO_UNSPEC,
-                c_kind.as_ptr(),
-                ptr::null_mut(),
-                0,
-                Some(browse_callback),
-                user_data as *mut c_void,
-            )
-        };
-
-        if browser == ptr::null_mut() {
-            None
-        } else {
-            Some(Self {
-                client,
-                poller,
-                browser,
-                user_data,
-            })
+    pub fn new(kind: &str, resolver_found_callback: Box<dyn Fn(ServiceResolution)>) -> Self {
+        Self {
+            poller: ptr::null_mut(),
+            browser: ptr::null_mut(),
+            kind: CString::new(kind.to_string()).unwrap(),
+            context: Box::into_raw(Box::new(AvahiBrowserContext {
+                client: ptr::null_mut(),
+                resolver_found_callback,
+                error_callback: None,
+            })),
         }
     }
 
-    pub fn start(&mut self) {
+    pub fn set_error_callback(&mut self, error_callback: Box<ErrorCallback>) {
+        unsafe { (*self.context).error_callback = Some(error_callback) };
+    }
+
+    pub fn start(&mut self) -> Result<(), String> {
+        self.poller = util::new_poller()?;
+
+        unsafe {
+            (*self.context).client = AvahiClientParams::builder()
+                .poller(self.poller)
+                .callback(Some(client_callback))
+                .context(ptr::null_mut())
+                .build()?
+                .try_into()?;
+        };
+
+        self.browser = unsafe {
+            AvahiServiceBrowserParams::builder()
+                .client((*self.context).client)
+                .interface(util::AVAHI_IF_UNSPEC)
+                .protocol(util::AVAHI_PROTO_UNSPEC)
+                .kind(self.kind.as_ptr())
+                .domain(ptr::null_mut())
+                .flags(0)
+                .callback(Some(browse_callback))
+                .context(self.context as *mut c_void)
+                .build()?
+                .try_into()?
+        };
+
         unsafe { avahi_simple_poll_loop(self.poller) };
+
+        Ok(())
     }
 }
 
 impl Drop for MdnsBrowser {
     fn drop(&mut self) {
         unsafe {
-            if self.client != ptr::null_mut() {
-                avahi_client_free(self.client);
-            }
-
             if self.poller != ptr::null_mut() {
                 avahi_simple_poll_free(self.poller);
             }
@@ -92,8 +89,22 @@ impl Drop for MdnsBrowser {
                 avahi_service_browser_free(self.browser);
             }
 
-            if self.user_data != ptr::null_mut() {
-                Box::from_raw(self.user_data);
+            Box::from_raw(self.context);
+        }
+    }
+}
+
+impl HandleError for AvahiBrowserContext {
+    fn error_callback(&self) -> Option<&Box<ErrorCallback>> {
+        self.error_callback.as_ref()
+    }
+}
+
+impl Drop for AvahiBrowserContext {
+    fn drop(&mut self) {
+        unsafe {
+            if self.client != ptr::null_mut() {
+                avahi_client_free(self.client);
             }
         }
     }
@@ -110,11 +121,12 @@ extern "C" fn browse_callback(
     _flags: AvahiLookupResultFlags,
     userdata: *mut c_void,
 ) {
+    let context = unsafe { &mut *(userdata as *mut AvahiBrowserContext) };
     match event {
         avahi_sys::AvahiBrowserEvent_AVAHI_BROWSER_NEW => {
             let resolver = unsafe {
                 avahi_service_resolver_new(
-                    (&mut *(userdata as *mut UserData)).client,
+                    context.client,
                     interface,
                     protocol,
                     name,
@@ -128,10 +140,12 @@ extern "C" fn browse_callback(
             };
 
             if resolver == ptr::null_mut() {
-                panic!("could not create new resolver");
+                context.handle_error("could not create new resolver");
             }
         }
-        avahi_sys::AvahiBrowserEvent_AVAHI_BROWSER_FAILURE => panic!("browser failure"),
+        avahi_sys::AvahiBrowserEvent_AVAHI_BROWSER_FAILURE => {
+            context.handle_error("browser failure")
+        }
         _ => {}
     }
 }
@@ -194,8 +208,8 @@ extern "C" fn resolve_callback(
                 .unwrap();
 
             let callback = unsafe {
-                let user_data = &mut *(userdata as *mut UserData);
-                &*(user_data.resolver_found_callback)
+                let context = &mut *(userdata as *mut AvahiBrowserContext);
+                &*(context.resolver_found_callback)
             };
 
             callback(result);

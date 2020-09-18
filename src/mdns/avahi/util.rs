@@ -1,8 +1,10 @@
 use avahi_sys::{
-    avahi_client_new, avahi_simple_poll_get, avahi_simple_poll_new, AvahiClient,
-    AvahiClientCallback, AvahiClientFlags, AvahiSimplePoll,
+    avahi_client_new, avahi_service_browser_new, avahi_simple_poll_get, avahi_simple_poll_new,
+    AvahiClient, AvahiClientCallback, AvahiClientFlags, AvahiIfIndex, AvahiLookupFlags,
+    AvahiProtocol, AvahiServiceBrowser, AvahiServiceBrowserCallback, AvahiSimplePoll,
 };
-use libc::{c_int, c_void};
+use libc::{c_char, c_int, c_void};
+use std::convert::TryInto;
 use std::ptr;
 
 pub const AVAHI_IF_UNSPEC: i32 = -1;
@@ -10,34 +12,98 @@ pub const AVAHI_PROTO_UNSPEC: i32 = -1;
 pub const AVAHI_ERR_COLLISION: i32 = -8;
 pub const AVAHI_ADDRESS_STR_MAX: usize = 40;
 
-pub fn new_poller() -> Option<*mut AvahiSimplePoll> {
+pub fn new_poller() -> Result<*mut AvahiSimplePoll, String> {
     let poller = unsafe { avahi_simple_poll_new() };
     if poller == ptr::null_mut() {
-        None
+        Err("could not initialize Avahi simple poll".to_string())
     } else {
-        Some(poller)
+        Ok(poller)
     }
 }
 
-pub fn new_client(
+#[derive(Builder)]
+pub struct AvahiClientParams {
     poller: *mut AvahiSimplePoll,
     callback: AvahiClientCallback,
-    user_data: *mut c_void,
-    err: *mut c_int,
-) -> Option<*mut AvahiClient> {
-    let client = unsafe {
-        avahi_client_new(
-            avahi_simple_poll_get(poller),
-            AvahiClientFlags(0),
-            callback,
-            user_data,
-            err,
-        )
-    };
+    context: *mut c_void,
+}
 
-    if client == ptr::null_mut() {
-        None
-    } else {
-        Some(client)
+impl AvahiClientParams {
+    pub fn builder() -> AvahiClientParamsBuilder {
+        AvahiClientParamsBuilder::default()
+    }
+}
+
+impl TryInto<*mut AvahiClient> for AvahiClientParams {
+    type Error = String;
+
+    fn try_into(self) -> Result<*mut AvahiClient, String> {
+        println!("creating AvahiClient");
+        let mut err: c_int = 0;
+
+        let client = unsafe {
+            avahi_client_new(
+                avahi_simple_poll_get(self.poller), // poll_api
+                AvahiClientFlags(0),                // flags
+                self.callback,                      // callback
+                self.context,                       // userdata
+                &mut err,                           // error
+            )
+        };
+
+        println!("client = {:?}", client);
+        println!("err = {:?}", err);
+
+        if client == ptr::null_mut() {
+            return Err("could not initialize AvahiClient".to_string());
+        }
+
+        match err {
+            0 => Ok(client),
+            _ => Err(format!("could not initialize AvahiClient (error: {})", err)),
+        }
+    }
+}
+
+#[derive(Builder)]
+pub struct AvahiServiceBrowserParams {
+    client: *mut AvahiClient,
+    interface: AvahiIfIndex,
+    protocol: AvahiProtocol,
+    kind: *const c_char,
+    domain: *const c_char,
+    flags: AvahiLookupFlags,
+    callback: AvahiServiceBrowserCallback,
+    context: *mut c_void,
+}
+
+impl AvahiServiceBrowserParams {
+    pub fn builder() -> AvahiServiceBrowserParamsBuilder {
+        AvahiServiceBrowserParamsBuilder::default()
+    }
+}
+
+impl TryInto<*mut AvahiServiceBrowser> for AvahiServiceBrowserParams {
+    type Error = String;
+
+    fn try_into(self) -> Result<*mut AvahiServiceBrowser, String> {
+        let browser = unsafe {
+            avahi_service_browser_new(
+                self.client,
+                self.interface,
+                self.protocol,
+                self.kind,
+                self.domain,
+                self.flags,
+                self.callback,
+                self.context,
+            )
+        };
+
+        if browser == ptr::null_mut() {
+            Err("could not initialize Avahi service browser".to_string())
+        } else {
+            Ok(browser)
+        }
     }
 }
