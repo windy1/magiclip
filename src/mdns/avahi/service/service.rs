@@ -1,7 +1,8 @@
-use super::client::AvahiClientParams;
-use super::constants;
-use super::err::{ErrorCallback, HandleError};
-use super::poll;
+use super::factory::AvahiServiceFactory;
+use crate::mdns::client::AvahiClientParams;
+use crate::mdns::constants;
+use crate::mdns::err::{ErrorCallback, HandleError};
+use crate::mdns::poll;
 use avahi_sys::{
     avahi_client_free, avahi_entry_group_add_service, avahi_entry_group_commit,
     avahi_entry_group_free, avahi_entry_group_is_empty, avahi_entry_group_new,
@@ -20,7 +21,7 @@ pub struct MdnsService {
 }
 
 struct AvahiServiceContext {
-    name: Option<CString>,
+    name: CString,
     kind: CString,
     port: u16,
     group: *mut AvahiEntryGroup,
@@ -33,7 +34,7 @@ impl MdnsService {
             client: ptr::null_mut(),
             poller: ptr::null_mut(),
             context: Box::into_raw(Box::new(AvahiServiceContext {
-                name: None,
+                name: CString::new("").unwrap(),
                 kind: CString::new(kind.to_string()).unwrap(),
                 port,
                 group: ptr::null_mut(),
@@ -47,16 +48,10 @@ impl MdnsService {
     }
 
     pub fn set_name(&mut self, name: &str) {
-        unsafe { (*self.context).name = Some(CString::new(name.to_string()).unwrap()) };
+        unsafe { (*self.context).name = CString::new(name.to_string()).unwrap() };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        unsafe {
-            if let None = (*self.context).name {
-                return Err("service name required when using Avahi".to_string());
-            }
-        };
-
         self.poller = poll::new_poller()?;
 
         self.client = AvahiClientParams::builder()
@@ -139,39 +134,58 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
     if unsafe { avahi_entry_group_is_empty(context.group) } != 0 {
         println!("Adding service");
 
-        println!("name = {:?}", context.name);
-        println!("group = {:?}", context.group);
-        println!("kind = {:?}", context.kind);
-        println!("port = {:?}", context.port);
+        // println!("name = {:?}", context.name);
+        // println!("group = {:?}", context.group);
+        // println!("kind = {:?}", context.kind);
+        // println!("port = {:?}", context.port);
+        //
+        // let ret = unsafe {
+        //     avahi_entry_group_add_service(
+        //         context.group,
+        //         constants::AVAHI_IF_UNSPEC,
+        //         constants::AVAHI_PROTO_UNSPEC,
+        //         0,
+        //         context.name.as_ref().unwrap().as_ptr(),
+        //         context.kind.as_ptr(),
+        //         ptr::null(),
+        //         ptr::null(),
+        //         context.port,
+        //     )
+        // };
+        //
+        // println!("Service added");
+        //
+        // if ret < 0 {
+        //     if ret == constants::AVAHI_ERR_COLLISION {
+        //         context.handle_error("could not register service due to collision");
+        //     } else {
+        //         context.handle_error("failed to register service");
+        //     }
+        //
+        //     return;
+        // }
+        //
+        // if unsafe { avahi_entry_group_commit(context.group) < 0 } {
+        //     context.handle_error("failed to commit service");
+        // }
 
-        let ret = unsafe {
-            avahi_entry_group_add_service(
-                context.group,
-                constants::AVAHI_IF_UNSPEC,
-                constants::AVAHI_PROTO_UNSPEC,
-                0,
-                context.name.as_ref().unwrap().as_ptr(),
-                context.kind.as_ptr(),
-                ptr::null_mut(),
-                ptr::null_mut(),
-                context.port,
-            )
-        };
+        let result = AvahiServiceFactory::builder()
+            .group(context.group)
+            .interface(constants::AVAHI_IF_UNSPEC)
+            .protocol(constants::AVAHI_PROTO_UNSPEC)
+            .flags(0)
+            .name(context.name.as_ptr())
+            .kind(context.kind.as_ptr())
+            .domain(ptr::null())
+            .host(ptr::null())
+            .port(context.port)
+            .build()
+            .map(|f| f.create_service());
 
-        println!("Service added");
-
-        if ret < 0 {
-            if ret == constants::AVAHI_ERR_COLLISION {
-                context.handle_error("could not register service due to collision");
-            } else {
-                context.handle_error("failed to register service");
-            }
-
-            return;
-        }
-
-        if unsafe { avahi_entry_group_commit(context.group) < 0 } {
-            context.handle_error("failed to commit service");
+        if let Err(err) = result {
+            context.handle_error(&err);
+        } else {
+            println!("Service added");
         }
     }
 }
