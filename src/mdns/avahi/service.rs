@@ -11,8 +11,6 @@ use std::convert::TryInto;
 use std::ffi::CString;
 use std::ptr;
 
-// TODO: better error reporting - missing bindings
-
 pub struct MdnsService {
     client: *mut AvahiClient,
     poller: *mut AvahiSimplePoll,

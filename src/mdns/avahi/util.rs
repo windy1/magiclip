@@ -1,10 +1,12 @@
 use avahi_sys::{
     avahi_client_new, avahi_service_browser_new, avahi_simple_poll_get, avahi_simple_poll_new,
-    AvahiClient, AvahiClientCallback, AvahiClientFlags, AvahiIfIndex, AvahiLookupFlags,
-    AvahiProtocol, AvahiServiceBrowser, AvahiServiceBrowserCallback, AvahiSimplePoll,
+    avahi_strerror, AvahiClient, AvahiClientCallback, AvahiClientFlags, AvahiIfIndex,
+    AvahiLookupFlags, AvahiProtocol, AvahiServiceBrowser, AvahiServiceBrowserCallback,
+    AvahiSimplePoll,
 };
 use libc::{c_char, c_int, c_void};
 use std::convert::TryInto;
+use std::ffi::CStr;
 use std::ptr;
 
 pub const AVAHI_IF_UNSPEC: i32 = -1;
@@ -18,6 +20,14 @@ pub fn new_poller() -> Result<*mut AvahiSimplePoll, String> {
         Err("could not initialize Avahi simple poll".to_string())
     } else {
         Ok(poller)
+    }
+}
+
+pub fn get_error<'a>(code: i32) -> &'a str {
+    unsafe {
+        CStr::from_ptr(avahi_strerror(code))
+            .to_str()
+            .expect("could not fetch Avahi error string")
     }
 }
 
@@ -38,7 +48,6 @@ impl TryInto<*mut AvahiClient> for AvahiClientParams {
     type Error = String;
 
     fn try_into(self) -> Result<*mut AvahiClient, String> {
-        println!("creating AvahiClient");
         let mut err: c_int = 0;
 
         let client = unsafe {
@@ -50,9 +59,6 @@ impl TryInto<*mut AvahiClient> for AvahiClientParams {
                 &mut err,                           // error
             )
         };
-
-        println!("client = {:?}", client);
-        println!("err = {:?}", err);
 
         if client == ptr::null_mut() {
             return Err("could not initialize AvahiClient".to_string());
@@ -105,5 +111,15 @@ impl TryInto<*mut AvahiServiceBrowser> for AvahiServiceBrowserParams {
         } else {
             Ok(browser)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_error_returns_valid_error_string() {
+        assert_eq!(get_error(avahi_sys::AVAHI_ERR_FAILURE), "Operation failed");
     }
 }
