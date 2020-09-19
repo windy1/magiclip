@@ -1,7 +1,8 @@
 use bonjour_sys::{
-    DNSServiceBrowse, DNSServiceBrowseReply, DNSServiceFlags, DNSServiceProcessResult,
-    DNSServiceRef, DNSServiceRefDeallocate, DNSServiceRegister, DNSServiceRegisterReply,
-    DNSServiceResolve, DNSServiceResolveReply,
+    DNSServiceBrowse, DNSServiceBrowseReply, DNSServiceFlags, DNSServiceGetAddrInfo,
+    DNSServiceGetAddrInfoReply, DNSServiceProcessResult, DNSServiceProtocol, DNSServiceRef,
+    DNSServiceRefDeallocate, DNSServiceRegister, DNSServiceRegisterReply, DNSServiceResolve,
+    DNSServiceResolveReply,
 };
 use libc::{c_char, c_void};
 use std::ptr;
@@ -43,6 +44,16 @@ pub struct ServiceResolveParams {
     regtype: *const c_char,
     domain: *const c_char,
     callback: DNSServiceResolveReply,
+    context: *mut c_void,
+}
+
+#[derive(Builder)]
+pub struct GetAddressInfoParams {
+    flags: DNSServiceFlags,
+    interface_index: u32,
+    protocol: DNSServiceProtocol,
+    hostname: *const c_char,
+    callback: DNSServiceGetAddrInfoReply,
     context: *mut c_void,
 }
 
@@ -154,8 +165,41 @@ impl ManagedDNSServiceRef {
 
         if error != 0 {
             return Err(format!(
-                "DNSServiceResolve reported error (code: {})",
+                "DNSServiceResolve() reported error (code: {})",
                 error
+            ));
+        }
+
+        self.process_result()
+    }
+
+    pub fn get_address_info(
+        &mut self,
+        GetAddressInfoParams {
+            flags,
+            interface_index,
+            protocol,
+            hostname,
+            callback,
+            context,
+        }: GetAddressInfoParams,
+    ) -> Result<(), String> {
+        let err = unsafe {
+            DNSServiceGetAddrInfo(
+                &mut self.service as *mut DNSServiceRef,
+                flags,
+                interface_index,
+                protocol,
+                hostname,
+                callback,
+                context,
+            )
+        };
+
+        if err != 0 {
+            return Err(format!(
+                "DNSServiceGetAddrInfo() reported error (code: {})",
+                err
             ));
         }
 
@@ -197,5 +241,11 @@ impl BrowseServicesParams {
 impl ServiceResolveParams {
     pub fn builder() -> ServiceResolveParamsBuilder {
         ServiceResolveParamsBuilder::default()
+    }
+}
+
+impl GetAddressInfoParams {
+    pub fn builder() -> GetAddressInfoParamsBuilder {
+        GetAddressInfoParamsBuilder::default()
     }
 }
