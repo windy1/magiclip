@@ -1,18 +1,15 @@
+use super::backend::{ManagedDNSServiceRef, RegisterServiceParams};
 use crate::mdns::err::{ErrorCallback, HandleError};
-use bonjour_sys::{
-    kDNSServiceProperty_DaemonVersion, DNSServiceCreateConnection, DNSServiceErrorType,
-    DNSServiceFlags, DNSServiceGetProperty, DNSServiceProcessResult, DNSServiceRef,
-    DNSServiceRefDeallocate, DNSServiceRegister, DNSServiceRegisterReply,
-};
+use bonjour_sys::{DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_void};
 use std::ffi::CString;
-use std::{mem, ptr};
+use std::ptr;
 
-const BOUNJOUR_IF_UNSPEC: u32 = 0;
+const BONJOUR_IF_UNSPEC: u32 = 0;
 const BONJOUR_RENAME_FLAGS: DNSServiceFlags = 0;
 
 pub struct MdnsService {
-    service: DNSServiceRef,
+    service: ManagedDNSServiceRef,
     kind: CString,
     port: u16,
     context: *mut BonjourServiceContext,
@@ -25,7 +22,7 @@ struct BonjourServiceContext {
 impl MdnsService {
     pub fn new(kind: &str, port: u16) -> Self {
         Self {
-            service: ptr::null_mut(),
+            service: ManagedDNSServiceRef::new(),
             kind: CString::new(kind).unwrap(),
             port,
             context: Box::into_raw(Box::new(BonjourServiceContext {
@@ -41,49 +38,28 @@ impl MdnsService {
     pub fn start(&mut self) -> Result<(), String> {
         println!("registering service");
 
-        let err = unsafe {
-            DNSServiceRegister(
-                &mut self.service as *mut DNSServiceRef, // sdRef
-                BONJOUR_RENAME_FLAGS,                    // flags
-                BOUNJOUR_IF_UNSPEC,                      // interfaceIndex
-                ptr::null(),                             // name
-                self.kind.as_ptr(),                      // regtype
-                ptr::null(),                             // domain
-                ptr::null(),                             // host
-                self.port,                               // port
-                0,                                       // txtLen
-                ptr::null(),                             // txtRecord
-                Some(register_callback),                 // callback
-                ptr::null_mut(),                         // context
-            )
-        };
-
-        if (err != 0) {
-            return Err(
-                format!("could not register service with error code: `{0}`", err).to_string(),
-            );
-        }
-
-        loop {
-            let err = unsafe { DNSServiceProcessResult(self.service) };
-
-            if err != 0 {
-                return Err(format!("could not process service result: `{0}`", err));
-            }
-        }
+        self.service.register_service(
+            RegisterServiceParams::builder()
+                .flags(BONJOUR_RENAME_FLAGS)
+                .interface_index(BONJOUR_IF_UNSPEC)
+                .name(ptr::null())
+                .regtype(self.kind.as_ptr())
+                .domain(ptr::null())
+                .host(ptr::null())
+                .port(self.port)
+                .txt_len(0)
+                .txt_record(ptr::null())
+                .callback(Some(register_callback))
+                .context(ptr::null_mut())
+                .build()?,
+        )
     }
 }
 
 impl Drop for MdnsService {
     fn drop(&mut self) {
-        unsafe {
-            if self.service != ptr::null_mut() {
-                DNSServiceRefDeallocate(self.service);
-            }
-
-            if self.context != ptr::null_mut() {
-                Box::from(self.context);
-            }
+        if self.context != ptr::null_mut() {
+            Box::from(self.context);
         }
     }
 }

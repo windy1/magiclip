@@ -1,35 +1,30 @@
-use super::resolver::{MdnsServiceResolver, ServiceResolveParams};
+use super::backend::{BrowseServicesParams, ManagedDNSServiceRef, ServiceResolveParams};
 use crate::mdns::err::{ErrorCallback, HandleError};
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
-use bonjour_sys::{
-    DNSServiceBrowse, DNSServiceErrorType, DNSServiceFlags, DNSServiceProcessResult, DNSServiceRef,
-    DNSServiceRefDeallocate, DNSServiceResolve,
-};
+use bonjour_sys::{DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void};
 use std::ffi::{CStr, CString};
 use std::ptr;
 
 pub struct MdnsBrowser {
-    service: DNSServiceRef,
+    service: ManagedDNSServiceRef,
     kind: CString,
-    resolver_found_callback: Box<ResolverFoundCallback>,
     context: *mut BonjourBrowserContext,
 }
 
 struct BonjourBrowserContext {
     error_callback: Option<Box<ErrorCallback>>,
-    resolve_service: DNSServiceRef,
+    resolver_found_callback: Box<ResolverFoundCallback>,
 }
 
 impl MdnsBrowser {
     pub fn new(kind: &str, resolver_found_callback: Box<dyn Fn(ServiceResolution)>) -> Self {
         Self {
-            service: ptr::null_mut(),
+            service: ManagedDNSServiceRef::new(),
             kind: CString::new(kind).unwrap(),
-            resolver_found_callback,
             context: Box::into_raw(Box::new(BonjourBrowserContext {
                 error_callback: None,
-                resolve_service: ptr::null_mut(),
+                resolver_found_callback,
             })),
         }
     }
@@ -41,44 +36,23 @@ impl MdnsBrowser {
     pub fn start(&mut self) -> Result<(), String> {
         println!("starting browser");
 
-        let err = unsafe {
-            DNSServiceBrowse(
-                &mut self.service as *mut DNSServiceRef, // sdRef
-                0,                                       // flags
-                0,                                       // interfaceIndex
-                self.kind.as_ptr(),                      // regtype
-                ptr::null_mut(),                         // domain
-                Some(browse_callback),                   // callback
-                self.context as *mut c_void,             // context
-            )
-        };
-
-        if err != 0 {
-            return Err(
-                format!("could not browse services with error code: `{0}`", err).to_string(),
-            );
-        }
-
-        loop {
-            let err = unsafe { DNSServiceProcessResult(self.service) };
-
-            if err != 0 {
-                return Err(format!("could not start processing loop: `{}`", err).to_string());
-            }
-        }
+        self.service.browse_services(
+            BrowseServicesParams::builder()
+                .flags(0)
+                .interface_index(0)
+                .regtype(self.kind.as_ptr())
+                .domain(ptr::null_mut())
+                .callback(Some(browse_callback))
+                .context(self.context as *mut c_void)
+                .build()?,
+        )
     }
 }
 
 impl Drop for MdnsBrowser {
     fn drop(&mut self) {
-        unsafe {
-            if self.service != ptr::null_mut() {
-                DNSServiceRefDeallocate(self.service);
-            }
-
-            if self.context != ptr::null_mut() {
-                Box::from(self.context);
-            }
+        if self.context != ptr::null_mut() {
+            Box::from(self.context);
         }
     }
 }
@@ -86,16 +60,6 @@ impl Drop for MdnsBrowser {
 impl HandleError for BonjourBrowserContext {
     fn error_callback(&self) -> Option<&Box<ErrorCallback>> {
         self.error_callback.as_ref()
-    }
-}
-
-impl Drop for BonjourBrowserContext {
-    fn drop(&mut self) {
-        unsafe {
-            if self.resolve_service != ptr::null_mut() {
-                DNSServiceRefDeallocate(self.resolve_service);
-            }
-        }
     }
 }
 
@@ -129,7 +93,7 @@ extern "C" fn browse_callback(
         return;
     }
 
-    let result = MdnsServiceResolver::new().resolve(
+    let result = ManagedDNSServiceRef::new().resolve_service(
         ServiceResolveParams::builder()
             .flags(0)
             .interface_index(interface_index)
@@ -148,15 +112,15 @@ extern "C" fn browse_callback(
 }
 
 extern "C" fn resolve_callback(
-    sdRef: DNSServiceRef,
-    flags: DNSServiceFlags,
-    interface_index: u32,
+    _sd_ref: DNSServiceRef,
+    _flags: DNSServiceFlags,
+    _interface_index: u32,
     error: DNSServiceErrorType,
     fullname: *const c_char,
     host_target: *const c_char,
-    port: u16,
-    txt_len: u16,
-    txt_record: *const c_uchar,
+    _port: u16,
+    _txt_len: u16,
+    _txt_record: *const c_uchar,
     context: *mut c_void,
 ) {
     let (fullname_r, host_target_r) = unsafe {
@@ -168,4 +132,13 @@ extern "C" fn resolve_callback(
 
     println!("fullname = {:?}", fullname_r);
     println!("host_target = {:?}", host_target_r);
+
+    let context = unsafe { &mut *(context as *mut BonjourBrowserContext) };
+
+    if error != 0 {
+        context.handle_error(&format!(
+            "error reported by resolve_callback: (code: {})",
+            error
+        ));
+    }
 }

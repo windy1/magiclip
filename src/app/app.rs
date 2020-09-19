@@ -3,6 +3,7 @@ use crate::mdns::{MdnsBrowser, MdnsService, ServiceResolution};
 use std::io;
 
 static SERVICE_TYPE: &'static str = "_magiclip._tcp";
+#[cfg(target_os = "linux")]
 static SERVICE_NAME: &'static str = "magiclip";
 static PORT: u16 = 6060;
 

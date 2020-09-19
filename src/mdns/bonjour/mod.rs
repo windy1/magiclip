@@ -1,7 +1,7 @@
 mod browser;
 mod service;
 
-pub mod resolver;
+pub mod backend;
 
 pub use browser::*;
 pub use service::*;
