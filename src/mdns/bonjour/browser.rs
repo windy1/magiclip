@@ -71,8 +71,11 @@ impl BonjourBrowserContext {
 }
 
 impl HandleError for BonjourBrowserContext {
-    fn error_callback(&self) -> Option<&Box<ErrorCallback>> {
-        self.error_callback.as_ref()
+    fn error_callback(&self) -> Option<&ErrorCallback> {
+        match self.error_callback {
+            Some(ref f) => Some(f),
+            None => None,
+        }
     }
 }
 
