@@ -3,7 +3,7 @@ use crate::mdns::client::AvahiClientParams;
 use crate::mdns::constants;
 use crate::mdns::err::{ErrorCallback, HandleError};
 use crate::mdns::poll;
-use crate::mdns::ServiceResolution;
+use crate::mdns::{ResolverFoundCallback, ServiceResolution};
 use avahi_sys::{
     avahi_address_snprint, avahi_client_free, avahi_service_browser_free,
     avahi_service_resolver_free, avahi_service_resolver_new, avahi_simple_poll_free,
@@ -15,8 +15,6 @@ use libc::{c_char, c_void};
 use std::convert::TryInto;
 use std::ffi::{CStr, CString};
 use std::{mem, ptr};
-
-pub type ResolverFoundCallback = dyn Fn(ServiceResolution);
 
 pub struct MdnsBrowser {
     poller: *mut AvahiSimplePoll,

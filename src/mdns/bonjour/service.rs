@@ -1,3 +1,4 @@
+use crate::mdns::err::{ErrorCallback, HandleError};
 use bonjour_sys::{
     kDNSServiceProperty_DaemonVersion, DNSServiceCreateConnection, DNSServiceErrorType,
     DNSServiceFlags, DNSServiceGetProperty, DNSServiceProcessResult, DNSServiceRef,
@@ -14,6 +15,11 @@ pub struct MdnsService {
     service: DNSServiceRef,
     kind: CString,
     port: u16,
+    context: *mut BonjourServiceContext,
+}
+
+struct BonjourServiceContext {
+    error_callback: Option<Box<ErrorCallback>>,
 }
 
 impl MdnsService {
@@ -22,7 +28,14 @@ impl MdnsService {
             service: ptr::null_mut(),
             kind: CString::new(kind).unwrap(),
             port,
+            context: Box::into_raw(Box::new(BonjourServiceContext {
+                error_callback: None,
+            })),
         }
+    }
+
+    pub fn set_error_callback(&mut self, error_callback: Box<ErrorCallback>) {
+        unsafe { (*self.context).error_callback = Some(error_callback) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -51,15 +64,12 @@ impl MdnsService {
             );
         }
 
-        let err = unsafe { DNSServiceProcessResult(self.service) };
+        loop {
+            let err = unsafe { DNSServiceProcessResult(self.service) };
 
-        if err != 0 {
-            Err(format!(
-                "could not start processing loop for service: `{0}`",
-                err
-            ))
-        } else {
-            Ok(())
+            if err != 0 {
+                return Err(format!("could not process service result: `{0}`", err));
+            }
         }
     }
 }
@@ -70,7 +80,17 @@ impl Drop for MdnsService {
             if self.service != ptr::null_mut() {
                 DNSServiceRefDeallocate(self.service);
             }
+
+            if self.context != ptr::null_mut() {
+                Box::from(self.context);
+            }
         }
+    }
+}
+
+impl HandleError for BonjourServiceContext {
+    fn error_callback(&self) -> Option<&Box<ErrorCallback>> {
+        self.error_callback.as_ref()
     }
 }
 
@@ -81,10 +101,14 @@ extern "C" fn register_callback(
     _name: *const c_char,
     _regtype: *const c_char,
     _domain: *const c_char,
-    _context: *mut c_void,
+    context: *mut c_void,
 ) {
+    let context = unsafe { &mut *(context as *mut BonjourServiceContext) };
     println!("register_callback");
     if error != 0 {
-        panic!("register_callback reported error (code: {0})", error);
+        context.handle_error(&format!(
+            "register_callback reported error (code: {0})",
+            error
+        ));
     }
 }

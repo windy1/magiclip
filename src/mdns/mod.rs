@@ -3,5 +3,7 @@
 mod os;
 mod service_resolution;
 
+pub mod err;
+
 pub use os::*;
 pub use service_resolution::*;

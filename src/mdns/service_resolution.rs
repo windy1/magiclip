@@ -1,3 +1,5 @@
+pub type ResolverFoundCallback = dyn Fn(ServiceResolution);
+
 #[derive(Debug, Builder, Getters)]
 pub struct ServiceResolution {
     name: String,
