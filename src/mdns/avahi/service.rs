@@ -70,6 +70,10 @@ impl AvahiServiceContext {
             group: None,
         }
     }
+
+    fn from_raw<'a>(raw: *mut c_void) -> &'a mut Self {
+        unsafe { &mut *(raw as *mut Self) }
+    }
 }
 
 impl fmt::Debug for AvahiServiceContext {
@@ -90,7 +94,7 @@ unsafe extern "C" fn client_callback(
 ) {
     println!("client_callback()");
 
-    let context = &mut *(userdata as *mut AvahiServiceContext);
+    let context = AvahiServiceContext::from_raw(userdata);
 
     println!("context = {:?}", context);
 
@@ -120,7 +124,7 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
                 ManagedAvahiEntryGroupParams::builder()
                     .client(client)
                     .callback(Some(entry_group_callback))
-                    .userdata(ptr::null_mut())
+                    .userdata(context as *mut _ as *mut c_void)
                     .build()
                     .unwrap(),
             )
@@ -158,13 +162,14 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
 extern "C" fn entry_group_callback(
     _group: *mut AvahiEntryGroup,
     state: AvahiEntryGroupState,
-    _userdata: *mut c_void,
+    userdata: *mut c_void,
 ) {
     println!("entry_group_callback()");
 
     match state {
         avahi_sys::AvahiEntryGroupState_AVAHI_ENTRY_GROUP_ESTABLISHED => {
             println!("group established");
+            println!("context = {:?}", AvahiServiceContext::from_raw(userdata));
         }
         _ => {}
     };
