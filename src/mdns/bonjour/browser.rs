@@ -211,11 +211,15 @@ unsafe extern "C" fn get_address_info_callback(
 
     let hostname_string = String::from(CStr::from_ptr(hostname).to_str().unwrap());
 
+    let domain = parse_domain(&hostname_string);
+
+    println!("domain = {:?}", domain);
+
     let result = ServiceResolution::builder()
         .name(ctx.resolved_name.take().unwrap())
         .kind(ctx.resolved_kind.take().unwrap())
-        .domain(hostname_string.clone())
-        .host_name(hostname_string.clone())
+        .domain(domain)
+        .host_name(hostname_string)
         .address(String::from(address_r))
         .port(ctx.resolved_port)
         .build()
@@ -226,4 +230,10 @@ unsafe extern "C" fn get_address_info_callback(
     }
 
     println!();
+}
+
+fn parse_domain(host: &str) -> String {
+    let str = String::from(&host[..host.rfind('.').unwrap_or_else(|| host.len() + 1)]);
+    let str = String::from(&str[str.rfind('.').map(|i| i + 1).unwrap_or_else(|| 0)..]);
+    str
 }
