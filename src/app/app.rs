@@ -12,8 +12,10 @@ pub struct App {}
 
 impl App {
     pub async fn start(&mut self) -> Result<(), io::Error> {
+        println!("App#start()");
         tokio::spawn(start_service());
         tokio::spawn(start_browser());
+        println!();
         AppServer::new("0.0.0.0", PORT).start().await
     }
 }
@@ -28,9 +30,11 @@ async fn start_service() {
 }
 
 async fn start_browser() {
-    MdnsBrowser::new(SERVICE_TYPE, Box::new(&on_service_discovered))
-        .start()
-        .unwrap();
+    let mut browser = MdnsBrowser::new(SERVICE_TYPE);
+
+    browser.set_resolver_found_callback(Box::new(&on_service_discovered));
+
+    browser.start().unwrap()
 }
 
 fn on_service_discovered(service: ServiceResolution) {
