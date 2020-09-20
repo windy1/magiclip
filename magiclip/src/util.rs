@@ -7,13 +7,22 @@ pub trait BuilderDelegate<T: Default> {
 }
 
 pub trait FromRaw<T> {
-    fn from_raw<'a>(raw: *mut c_void) -> &'a mut T {
-        unsafe { &mut *(raw as *mut T) }
+    unsafe fn from_raw<'a>(raw: *mut c_void) -> &'a mut T {
+        &mut *(raw as *mut T)
     }
 }
 
 pub trait CloneRaw<T: FromRaw<T> + Clone> {
-    fn clone_raw<'a>(raw: *mut c_void) -> Box<T> {
+    unsafe fn clone_raw<'a>(raw: *mut c_void) -> Box<T> {
         Box::new(T::from_raw(raw).clone())
+    }
+}
+
+pub mod cstr {
+    use libc::c_char;
+    use std::ffi::CStr;
+
+    pub unsafe fn raw_to_str<'a>(s: *const c_char) -> &'a str {
+        CStr::from_ptr(s).to_str().unwrap()
     }
 }

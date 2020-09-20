@@ -3,7 +3,7 @@ use super::backend::{
 };
 use super::util;
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
-use crate::util::{BuilderDelegate, CloneRaw, FromRaw};
+use crate::util::{cstr, BuilderDelegate, CloneRaw, FromRaw};
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
 use std::ffi::{CStr, CString};
@@ -77,6 +77,12 @@ impl fmt::Debug for BonjourBrowserContext {
     }
 }
 
+impl Drop for BonjourBrowserContext {
+    fn drop(&mut self) {
+        println!("BonjourResolverContext#drop()");
+    }
+}
+
 unsafe extern "C" fn browse_callback(
     _sd_ref: DNSServiceRef,
     _flags: DNSServiceFlags,
@@ -95,19 +101,11 @@ unsafe extern "C" fn browse_callback(
         panic!("browse_callback() reported error (code: {})", error);
     }
 
-    let name_r = CStr::from_ptr(name).to_str().unwrap();
-    let regtype_r = CStr::from_ptr(regtype).to_str().unwrap();
-    let domain_r = CStr::from_ptr(domain).to_str().unwrap();
+    ctx.resolved_name = Some(String::from(cstr::raw_to_str(name)));
+    ctx.resolved_kind = Some(String::from(cstr::raw_to_str(regtype)));
+    ctx.resolved_domain = Some(String::from(cstr::raw_to_str(domain)));
 
-    println!("name = {:?}", name_r);
-    println!("regtype = {:?}", regtype_r);
-    println!("domain = {:?}", domain_r);
-
-    ctx.resolved_name = Some(String::from(name_r));
-    ctx.resolved_kind = Some(String::from(regtype_r));
-    ctx.resolved_domain = Some(String::from(domain_r));
-
-    println!();
+    println!("context = {:?}\n", ctx);
 
     ManagedDNSServiceRef::default()
         .resolve_service(
@@ -139,7 +137,7 @@ unsafe extern "C" fn resolve_callback(
 ) {
     println!("resolve_callback()");
 
-    let mut ctx = Box::new(BonjourBrowserContext::from_raw(context).clone());
+    let ctx = BonjourBrowserContext::from_raw(context);
 
     println!("context = {:?}", ctx);
 
@@ -151,11 +149,9 @@ unsafe extern "C" fn resolve_callback(
     let host_target_r = CStr::from_ptr(host_target).to_str().unwrap();
 
     println!("fullname = {:?}", fullname_r);
-    println!("host_target = {:?}", host_target_r);
+    println!("host_target = {:?}\n", host_target_r);
 
     ctx.resolved_port = port;
-
-    println!();
 
     ManagedDNSServiceRef::default()
         .get_address_info(
@@ -165,11 +161,15 @@ unsafe extern "C" fn resolve_callback(
                 .protocol(0)
                 .hostname(host_target)
                 .callback(Some(get_address_info_callback))
-                .context(Box::into_raw(ctx) as *mut c_void)
+                // .context(Box::into_raw(ctx) as *mut c_void)
+                .context(context)
                 .build()
                 .expect("could not build GetAddressInfoParams"),
         )
         .unwrap();
+
+    // free context
+    Box::from_raw(context as *mut BonjourBrowserContext);
 }
 
 extern "C" {
@@ -188,7 +188,13 @@ unsafe extern "C" fn get_address_info_callback(
 ) {
     println!("get_address_info_callback()");
 
-    let mut ctx = BonjourBrowserContext::from_raw(context).clone();
+    let ctx = BonjourBrowserContext::from_raw(context);
+
+    // this callback runs multiple times for some reason
+    if ctx.resolved_name.is_none() {
+        println!("duplicate call");
+        return;
+    }
 
     println!("context = {:?}", ctx);
 
@@ -206,11 +212,12 @@ unsafe extern "C" fn get_address_info_callback(
     let hostname_r = CStr::from_ptr(hostname).to_str().unwrap();
     let hostname_string = String::from(CStr::from_ptr(hostname).to_str().unwrap());
 
+    println!("address = {:?}", address_r);
+    println!("hostname = {:?}", hostname_r);
+
     let domain = util::normalize_domain(&ctx.resolved_domain.take().unwrap());
 
     println!("domain = {:?}", domain);
-    println!("address = {:?}", address_r);
-    println!("hostname = {:?}", hostname_r);
 
     let result = ServiceResolution::builder()
         .name(ctx.resolved_name.take().unwrap())

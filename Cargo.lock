@@ -364,8 +364,17 @@ dependencies = [
  "derive-getters",
  "derive_builder",
  "libc",
+ "magiclip-macros",
  "pre-commit",
  "tokio",
+]
+
+[[package]]
+name = "magiclip-macros"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]
