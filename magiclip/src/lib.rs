@@ -6,6 +6,8 @@ extern crate derive_builder;
 // extern crate getset;
 #[macro_use]
 extern crate derive_getters;
+#[macro_use]
+extern crate magiclip_macros;
 #[cfg(target_os = "linux")]
 extern crate avahi_sys;
 #[cfg(target_os = "macos")]

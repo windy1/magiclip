@@ -58,12 +58,10 @@ impl Drop for MdnsService {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, FromRaw)]
 pub struct BonjourServiceContext {
     registered_callback: Option<Box<ServiceRegisteredCallback>>,
 }
-
-impl FromRaw<BonjourServiceContext> for BonjourServiceContext {}
 
 unsafe extern "C" fn register_callback(
     _sd_ref: DNSServiceRef,

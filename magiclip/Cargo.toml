@@ -13,6 +13,7 @@ derive_builder = "0.9.0"
 # getset = "0.1.1"
 derive-getters = "0.2.0"
 pre-commit = "0.5.2"
+magiclip-macros = { path = "../magiclip-macros" }
 
 [target.'cfg(unix)'.dependencies]
 avahi-sys = { path = "../../avahi-sys" }
