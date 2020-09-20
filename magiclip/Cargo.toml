@@ -1,0 +1,25 @@
+[package]
+name = "magiclip"
+version = "0.1.0"
+authors = ["Walker Crouse <walker.crouse@coop.co.uk>"]
+edition = "2018"
+
+[dependencies]
+libc = "*"
+clipboard = "0.5.0"
+tokio = { version = "0.2.22", features = ["full"] }
+# derive-new = "0.5.8"
+derive_builder = "0.9.0"
+# getset = "0.1.1"
+derive-getters = "0.2.0"
+pre-commit = "0.5.2"
+
+[target.'cfg(unix)'.dependencies]
+avahi-sys = { path = "../../avahi-sys" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+bonjour-sys = { path = "../../bonjour-sys" }
+
+[package.metadata.precommit]
+fmt = "cargo fmt"
+test = "cargo test"
