@@ -12,6 +12,7 @@ use std::fmt::{self, Formatter};
 use std::ptr;
 
 pub struct MdnsService {
+    client: Option<ManagedAvahiClient>,
     poll: Option<ManagedAvahiSimplePoll>,
     context: *mut AvahiServiceContext,
 }
@@ -19,6 +20,7 @@ pub struct MdnsService {
 impl MdnsService {
     pub fn new(kind: &str, port: u16) -> Self {
         Self {
+            client: None,
             poll: None,
             context: Box::into_raw(Box::new(AvahiServiceContext::new(kind, port))),
         }
@@ -33,7 +35,7 @@ impl MdnsService {
 
         self.poll = Some(ManagedAvahiSimplePoll::new()?);
 
-        Some(ManagedAvahiClient::new(
+        self.client = Some(ManagedAvahiClient::new(
             ManagedAvahiClientParams::builder()
                 .poll(self.poll.as_ref().unwrap())
                 .flags(AvahiClientFlags(0))
@@ -76,7 +78,7 @@ impl fmt::Debug for AvahiServiceContext {
             .field("name", &self.name)
             .field("kind", &self.kind)
             .field("port", &self.port)
-            .field("has_group", &self.group.is_some())
+            .field("group", &self.group)
             .finish()
     }
 }
@@ -131,7 +133,7 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
     let group = context.group.as_mut().unwrap();
 
     if group.is_empty() {
-        println!("adding service");
+        println!("adding service\n");
 
         group
             .add_service(
@@ -162,7 +164,7 @@ extern "C" fn entry_group_callback(
 
     match state {
         avahi_sys::AvahiEntryGroupState_AVAHI_ENTRY_GROUP_ESTABLISHED => {
-            println!("GROUP_ESTABLISHED");
+            println!("group established");
         }
         _ => {}
     };
