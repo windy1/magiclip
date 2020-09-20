@@ -1,50 +1,69 @@
+use crate::mdns::client::ManagedAvahiClient;
+use crate::util::BuilderDelegate;
 use avahi_sys::{
-    avahi_service_browser_new, AvahiClient, AvahiIfIndex, AvahiLookupFlags, AvahiProtocol,
-    AvahiServiceBrowser, AvahiServiceBrowserCallback,
+    avahi_service_browser_free, avahi_service_browser_new, AvahiIfIndex, AvahiLookupFlags,
+    AvahiProtocol, AvahiServiceBrowser, AvahiServiceBrowserCallback,
 };
 use libc::{c_char, c_void};
-use std::convert::TryInto;
 use std::ptr;
 
-#[derive(Builder)]
-pub struct AvahiServiceBrowserParams {
-    client: *mut AvahiClient,
-    interface: AvahiIfIndex,
-    protocol: AvahiProtocol,
-    kind: *const c_char,
-    domain: *const c_char,
-    flags: AvahiLookupFlags,
-    callback: AvahiServiceBrowserCallback,
-    context: *mut c_void,
+pub struct ManagedAvahiServiceBrowser {
+    browser: *mut AvahiServiceBrowser,
 }
 
-impl AvahiServiceBrowserParams {
-    pub fn builder() -> AvahiServiceBrowserParamsBuilder {
-        AvahiServiceBrowserParamsBuilder::default()
-    }
-}
-
-impl TryInto<*mut AvahiServiceBrowser> for AvahiServiceBrowserParams {
-    type Error = String;
-
-    fn try_into(self) -> Result<*mut AvahiServiceBrowser, String> {
+impl ManagedAvahiServiceBrowser {
+    pub fn new(
+        ManagedAvahiServiceBrowserParams {
+            client,
+            interface,
+            protocol,
+            kind,
+            domain,
+            flags,
+            callback,
+            userdata,
+        }: ManagedAvahiServiceBrowserParams,
+    ) -> Result<Self, String> {
         let browser = unsafe {
             avahi_service_browser_new(
-                self.client,
-                self.interface,
-                self.protocol,
-                self.kind,
-                self.domain,
-                self.flags,
-                self.callback,
-                self.context,
+                client.client,
+                interface,
+                protocol,
+                kind,
+                domain,
+                flags,
+                callback,
+                userdata,
             )
         };
 
         if browser == ptr::null_mut() {
             Err("could not initialize Avahi service browser".to_string())
         } else {
-            Ok(browser)
+            Ok(Self { browser })
         }
     }
+}
+
+impl Drop for ManagedAvahiServiceBrowser {
+    fn drop(&mut self) {
+        unsafe { avahi_service_browser_free(self.browser) };
+    }
+}
+
+#[derive(Builder)]
+pub struct ManagedAvahiServiceBrowserParams<'a> {
+    client: &'a ManagedAvahiClient,
+    interface: AvahiIfIndex,
+    protocol: AvahiProtocol,
+    kind: *const c_char,
+    domain: *const c_char,
+    flags: AvahiLookupFlags,
+    callback: AvahiServiceBrowserCallback,
+    userdata: *mut c_void,
+}
+
+impl<'a> BuilderDelegate<ManagedAvahiServiceBrowserParamsBuilder<'a>>
+    for ManagedAvahiServiceBrowserParams<'a>
+{
 }

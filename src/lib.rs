@@ -14,5 +14,6 @@ extern crate tokio;
 
 mod app;
 pub mod mdns;
+pub mod util;
 
 pub use app::*;

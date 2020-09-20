@@ -1,38 +1,43 @@
 use super::err;
+use super::poll::ManagedAvahiSimplePoll;
+use crate::util::BuilderDelegate;
 use avahi_sys::{
-    avahi_client_new, avahi_simple_poll_get, AvahiClient, AvahiClientCallback, AvahiClientFlags,
-    AvahiSimplePoll,
+    avahi_client_free, avahi_client_new, avahi_simple_poll_get, AvahiClient, AvahiClientCallback,
+    AvahiClientFlags,
 };
 use libc::{c_int, c_void};
-use std::convert::TryInto;
 use std::ptr;
 
+pub struct ManagedAvahiClient {
+    pub(super) client: *mut AvahiClient,
+}
+
 #[derive(Builder)]
-pub struct AvahiClientParams {
-    poller: *mut AvahiSimplePoll,
+pub struct ManagedAvahiClientParams<'a> {
+    poll: &'a ManagedAvahiSimplePoll,
+    flags: AvahiClientFlags,
     callback: AvahiClientCallback,
-    context: *mut c_void,
+    userdata: *mut c_void,
 }
 
-impl AvahiClientParams {
-    pub fn builder() -> AvahiClientParamsBuilder {
-        AvahiClientParamsBuilder::default()
-    }
-}
-
-impl TryInto<*mut AvahiClient> for AvahiClientParams {
-    type Error = String;
-
-    fn try_into(self) -> Result<*mut AvahiClient, String> {
+impl ManagedAvahiClient {
+    pub fn new(
+        ManagedAvahiClientParams {
+            poll,
+            flags,
+            callback,
+            userdata,
+        }: ManagedAvahiClientParams,
+    ) -> Result<Self, String> {
         let mut err: c_int = 0;
 
         let client = unsafe {
             avahi_client_new(
-                avahi_simple_poll_get(self.poller), // poll_api
-                AvahiClientFlags(0),                // flags
-                self.callback,                      // callback
-                self.context,                       // userdata
-                &mut err,                           // error
+                avahi_simple_poll_get(poll.poll),
+                flags,
+                callback,
+                userdata,
+                &mut err,
             )
         };
 
@@ -41,11 +46,19 @@ impl TryInto<*mut AvahiClient> for AvahiClientParams {
         }
 
         match err {
-            0 => Ok(client),
+            0 => Ok(Self { client }),
             _ => Err(format!(
-                "could not initialize AvahiClient: `{}`",
+                "could not initialize AvahiClient: {}",
                 err::get_error(err)
             )),
         }
     }
 }
+
+impl Drop for ManagedAvahiClient {
+    fn drop(&mut self) {
+        unsafe { avahi_client_free(self.client) };
+    }
+}
+
+impl<'a> BuilderDelegate<ManagedAvahiClientParamsBuilder<'a>> for ManagedAvahiClientParams<'a> {}
