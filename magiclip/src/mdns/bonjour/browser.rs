@@ -6,7 +6,7 @@ use crate::mdns::{ResolverFoundCallback, ServiceResolution};
 use crate::util::{cstr, BuilderDelegate, CloneRaw, FromRaw};
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::fmt::{self, Formatter};
 use std::ptr;
 use std::sync::Arc;
@@ -145,8 +145,8 @@ unsafe extern "C" fn resolve_callback(
         panic!("error reported by resolve_callback: (code: {})", error);
     }
 
-    let fullname_r = CStr::from_ptr(fullname).to_str().unwrap();
-    let host_target_r = CStr::from_ptr(host_target).to_str().unwrap();
+    let fullname_r = cstr::raw_to_str(fullname);
+    let host_target_r = cstr::raw_to_str(host_target);
 
     println!("fullname = {:?}", fullname_r);
     println!("host_target = {:?}\n", host_target_r);
@@ -161,7 +161,6 @@ unsafe extern "C" fn resolve_callback(
                 .protocol(0)
                 .hostname(host_target)
                 .callback(Some(get_address_info_callback))
-                // .context(Box::into_raw(ctx) as *mut c_void)
                 .context(context)
                 .build()
                 .expect("could not build GetAddressInfoParams"),
@@ -170,10 +169,6 @@ unsafe extern "C" fn resolve_callback(
 
     // free context
     Box::from_raw(context as *mut BonjourBrowserContext);
-}
-
-extern "C" {
-    fn inet_ntoa(addr: *const libc::in_addr) -> *const c_char;
 }
 
 unsafe extern "C" fn get_address_info_callback(
@@ -205,26 +200,20 @@ unsafe extern "C" fn get_address_info_callback(
         );
     }
 
-    let address_c = address as *const sockaddr_in;
-    let address_c_str = inet_ntoa(&(*address_c).sin_addr as *const in_addr);
-    let address_r = CStr::from_ptr(address_c_str).to_str().unwrap();
-
-    let hostname_r = CStr::from_ptr(hostname).to_str().unwrap();
-    let hostname_string = String::from(CStr::from_ptr(hostname).to_str().unwrap());
-
-    println!("address = {:?}", address_r);
-    println!("hostname = {:?}", hostname_r);
-
+    let ip = get_ip(address as *const sockaddr_in);
+    let hostname = cstr::copy_raw(hostname);
     let domain = util::normalize_domain(&ctx.resolved_domain.take().unwrap());
 
+    println!("address = {:?}", ip);
+    println!("hostname = {:?}", hostname);
     println!("domain = {:?}", domain);
 
     let result = ServiceResolution::builder()
         .name(ctx.resolved_name.take().unwrap())
         .kind(ctx.resolved_kind.take().unwrap())
         .domain(domain)
-        .host_name(hostname_string)
-        .address(String::from(address_r))
+        .host_name(hostname)
+        .address(ip)
         .port(ctx.resolved_port)
         .build()
         .expect("could not build ServiceResolution");
@@ -234,4 +223,13 @@ unsafe extern "C" fn get_address_info_callback(
     }
 
     println!();
+}
+
+extern "C" {
+    fn inet_ntoa(addr: *const libc::in_addr) -> *const c_char;
+}
+
+unsafe fn get_ip(address: *const sockaddr_in) -> String {
+    let raw = inet_ntoa(&(*address).sin_addr as *const in_addr);
+    String::from(cstr::raw_to_str(raw))
 }
