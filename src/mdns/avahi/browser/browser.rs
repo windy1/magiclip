@@ -1,7 +1,6 @@
 use super::backend::AvahiServiceBrowserParams;
 use crate::mdns::client::AvahiClientParams;
 use crate::mdns::constants;
-use crate::mdns::err::{ErrorCallback, HandleError};
 use crate::mdns::poll;
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
 use avahi_sys::{
@@ -25,26 +24,27 @@ pub struct MdnsBrowser {
 
 struct AvahiBrowserContext {
     client: *mut AvahiClient,
-    resolver_found_callback: Box<ResolverFoundCallback>,
-    error_callback: Option<Box<ErrorCallback>>,
+    resolver_found_callback: Option<Box<ResolverFoundCallback>>,
 }
 
 impl MdnsBrowser {
-    pub fn new(kind: &str, resolver_found_callback: Box<dyn Fn(ServiceResolution)>) -> Self {
+    pub fn new(kind: &str) -> Self {
         Self {
             poller: ptr::null_mut(),
             browser: ptr::null_mut(),
             kind: CString::new(kind.to_string()).unwrap(),
             context: Box::into_raw(Box::new(AvahiBrowserContext {
                 client: ptr::null_mut(),
-                resolver_found_callback,
-                error_callback: None,
+                resolver_found_callback: None,
             })),
         }
     }
 
-    pub fn set_error_callback(&mut self, error_callback: Box<ErrorCallback>) {
-        unsafe { (*self.context).error_callback = Some(error_callback) };
+    pub fn set_resolver_found_callback(
+        &mut self,
+        resolver_found_callback: Box<ResolverFoundCallback>,
+    ) {
+        unsafe { (*self.context).resolver_found_callback = Some(resolver_found_callback) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -95,12 +95,6 @@ impl Drop for MdnsBrowser {
     }
 }
 
-impl HandleError for AvahiBrowserContext {
-    fn error_callback(&self) -> Option<&Box<ErrorCallback>> {
-        self.error_callback.as_ref()
-    }
-}
-
 impl Drop for AvahiBrowserContext {
     fn drop(&mut self) {
         unsafe {
@@ -141,12 +135,10 @@ extern "C" fn browse_callback(
             };
 
             if resolver == ptr::null_mut() {
-                context.handle_error("could not create new resolver");
+                panic!("could not create new resolver");
             }
         }
-        avahi_sys::AvahiBrowserEvent_AVAHI_BROWSER_FAILURE => {
-            context.handle_error("browser failure")
-        }
+        avahi_sys::AvahiBrowserEvent_AVAHI_BROWSER_FAILURE => panic!("browser failure"),
         _ => {}
     }
 }
@@ -208,12 +200,11 @@ extern "C" fn resolve_callback(
                 .build()
                 .unwrap();
 
-            let callback = unsafe {
-                let context = &mut *(userdata as *mut AvahiBrowserContext);
-                &*(context.resolver_found_callback)
-            };
+            let context = unsafe { &mut *(userdata as *mut AvahiBrowserContext) };
 
-            callback(result);
+            if let Some(f) = &context.resolver_found_callback {
+                f(result);
+            }
         }
         _ => {}
     }

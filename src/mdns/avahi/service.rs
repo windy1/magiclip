@@ -1,6 +1,5 @@
 use super::client::AvahiClientParams;
 use super::constants;
-use super::err::{ErrorCallback, HandleError};
 use super::poll;
 use avahi_sys::{
     avahi_client_free, avahi_entry_group_add_service, avahi_entry_group_commit,
@@ -24,7 +23,6 @@ struct AvahiServiceContext {
     kind: CString,
     port: u16,
     group: *mut AvahiEntryGroup,
-    error_callback: Option<Box<ErrorCallback>>,
 }
 
 impl MdnsService {
@@ -37,13 +35,8 @@ impl MdnsService {
                 kind: CString::new(kind.to_string()).unwrap(),
                 port,
                 group: ptr::null_mut(),
-                error_callback: None,
             })),
         }
-    }
-
-    pub fn set_error_callback(&mut self, error_callback: Box<ErrorCallback>) {
-        unsafe { (*self.context).error_callback = Some(error_callback) };
     }
 
     pub fn set_name(&mut self, name: &str) {
@@ -88,12 +81,6 @@ impl Drop for MdnsService {
     }
 }
 
-impl HandleError for AvahiServiceContext {
-    fn error_callback(&self) -> Option<&Box<ErrorCallback>> {
-        self.error_callback.as_ref()
-    }
-}
-
 impl Drop for AvahiServiceContext {
     fn drop(&mut self) {
         unsafe {
@@ -113,7 +100,7 @@ extern "C" fn client_callback(
 
     match state {
         avahi_sys::AvahiClientState_AVAHI_CLIENT_S_RUNNING => create_service(client, context),
-        avahi_sys::AvahiClientState_AVAHI_CLIENT_FAILURE => context.handle_error("client failure"),
+        avahi_sys::AvahiClientState_AVAHI_CLIENT_FAILURE => panic!("client failure"),
         avahi_sys::AvahiClientState_AVAHI_CLIENT_S_REGISTERING => {
             if userdata != ptr::null_mut() && context.group != ptr::null_mut() {
                 unsafe { avahi_entry_group_reset(context.group) };
@@ -131,8 +118,7 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
             unsafe { avahi_entry_group_new(client, Some(entry_group_callback), ptr::null_mut()) };
 
         if context.group == ptr::null_mut() {
-            context.handle_error("avahi_entry_group_new() failed");
-            return;
+            panic!("avahi_entry_group_new() failed");
         }
     }
 
@@ -162,16 +148,14 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
 
         if ret < 0 {
             if ret == constants::AVAHI_ERR_COLLISION {
-                context.handle_error("could not register service due to collision");
+                panic!("could not register service due to collision");
             } else {
-                context.handle_error("failed to register service");
+                panic!("failed to register service");
             }
-
-            return;
         }
 
         if unsafe { avahi_entry_group_commit(context.group) < 0 } {
-            context.handle_error("failed to commit service");
+            panic!("failed to commit service");
         }
     }
 }
