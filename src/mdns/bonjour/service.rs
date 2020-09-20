@@ -1,7 +1,7 @@
 use super::backend::{ManagedDNSServiceRef, RegisterServiceParams};
 use super::util;
 use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
-use crate::util::BuilderDelegate;
+use crate::util::{BuilderDelegate, FromRaw};
 use bonjour_sys::{DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_void};
 use std::ffi::{CStr, CString};
@@ -63,11 +63,7 @@ pub struct BonjourServiceContext {
     registered_callback: Option<Box<ServiceRegisteredCallback>>,
 }
 
-impl BonjourServiceContext {
-    fn from_raw<'a>(raw: *mut c_void) -> &'a mut Self {
-        unsafe { &mut *(raw as *mut BonjourServiceContext) }
-    }
-}
+impl FromRaw<BonjourServiceContext> for BonjourServiceContext {}
 
 unsafe extern "C" fn register_callback(
     _sd_ref: DNSServiceRef,
