@@ -1,10 +1,11 @@
 use super::backend::{ManagedDNSServiceRef, RegisterServiceParams};
 use super::util;
 use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
+use crate::util::cstr;
 use crate::util::{BuilderDelegate, FromRaw};
 use bonjour_sys::{DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_void};
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::ptr;
 
 const BONJOUR_IF_UNSPEC: u32 = 0;
@@ -78,11 +79,11 @@ unsafe extern "C" fn register_callback(
         panic!("register_callback reported error (code: {0})", error);
     }
 
-    let domain = util::normalize_domain(CStr::from_ptr(domain).to_str().unwrap());
+    let domain = util::normalize_domain(cstr::raw_to_str(domain));
 
     let result = ServiceRegistration::builder()
-        .name(String::from(CStr::from_ptr(name).to_str().unwrap()))
-        .kind(String::from(CStr::from_ptr(regtype).to_str().unwrap()))
+        .name(cstr::copy_raw(name))
+        .kind(cstr::copy_raw(regtype))
         .domain(domain)
         .build()
         .expect("could not build ServiceRegistration");
