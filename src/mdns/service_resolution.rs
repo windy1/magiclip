@@ -1,3 +1,5 @@
+use crate::util::BuilderDelegate;
+
 pub type ResolverFoundCallback = dyn Fn(ServiceResolution);
 
 #[derive(Debug, Builder, Getters)]
@@ -10,12 +12,4 @@ pub struct ServiceResolution {
     port: u16,
 }
 
-impl ServiceResolution {
-    pub fn is_local(&self) -> bool {
-        self.domain == "local"
-    }
-
-    pub fn builder() -> ServiceResolutionBuilder {
-        ServiceResolutionBuilder::default()
-    }
-}
+impl BuilderDelegate<ServiceResolutionBuilder> for ServiceResolution {}

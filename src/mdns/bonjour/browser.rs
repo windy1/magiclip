@@ -1,7 +1,9 @@
 use super::backend::{
     BrowseServicesParams, GetAddressInfoParams, ManagedDNSServiceRef, ServiceResolveParams,
 };
+use super::util;
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
+use crate::util::BuilderDelegate;
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
 use std::ffi::{CStr, CString};
@@ -208,19 +210,13 @@ unsafe extern "C" fn get_address_info_callback(
     let address_r = CStr::from_ptr(address_c_str).to_str().unwrap();
 
     let hostname_r = CStr::from_ptr(hostname).to_str().unwrap();
-
-    println!("address = {:?}", address_r);
-    println!("hostname = {:?}", hostname_r);
-
     let hostname_string = String::from(CStr::from_ptr(hostname).to_str().unwrap());
 
-    let mut domain = ctx.resolved_domain.take().unwrap();
-
-    if domain.chars().nth(domain.len() - 1).unwrap() == '.' {
-        domain = String::from(&domain[..domain.len() - 1]);
-    }
+    let domain = util::normalize_domain(&ctx.resolved_domain.take().unwrap());
 
     println!("domain = {:?}", domain);
+    println!("address = {:?}", address_r);
+    println!("hostname = {:?}", hostname_r);
 
     let result = ServiceResolution::builder()
         .name(ctx.resolved_name.take().unwrap())

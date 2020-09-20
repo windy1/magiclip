@@ -5,5 +5,5 @@ use std::io;
 
 #[tokio::main]
 async fn main() -> Result<(), io::Error> {
-    App::new().start().await
+    App::default().start().await
 }

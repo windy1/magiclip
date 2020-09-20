@@ -1,7 +1,10 @@
 use super::backend::{ManagedDNSServiceRef, RegisterServiceParams};
+use super::util;
+use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
+use crate::util::BuilderDelegate;
 use bonjour_sys::{DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_void};
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::ptr;
 
 const BONJOUR_IF_UNSPEC: u32 = 0;
@@ -11,6 +14,7 @@ pub struct MdnsService {
     service: ManagedDNSServiceRef,
     kind: CString,
     port: u16,
+    context: *mut BonjourServiceContext,
 }
 
 impl MdnsService {
@@ -19,7 +23,12 @@ impl MdnsService {
             service: ManagedDNSServiceRef::default(),
             kind: CString::new(kind).unwrap(),
             port,
+            context: Box::into_raw(Box::default()),
         }
+    }
+
+    pub fn set_registered_callback(&mut self, registered_callback: Box<ServiceRegisteredCallback>) {
+        unsafe { (*self.context).registered_callback = Some(registered_callback) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -37,20 +46,37 @@ impl MdnsService {
                 .txt_len(0)
                 .txt_record(ptr::null())
                 .callback(Some(register_callback))
-                .context(ptr::null_mut())
+                .context(self.context as *mut c_void)
                 .build()?,
         )
     }
 }
 
-extern "C" fn register_callback(
+impl Drop for MdnsService {
+    fn drop(&mut self) {
+        unsafe { Box::from_raw(self.context) };
+    }
+}
+
+#[derive(Default)]
+pub struct BonjourServiceContext {
+    registered_callback: Option<Box<ServiceRegisteredCallback>>,
+}
+
+impl BonjourServiceContext {
+    fn from_raw<'a>(raw: *mut c_void) -> &'a mut Self {
+        unsafe { &mut *(raw as *mut BonjourServiceContext) }
+    }
+}
+
+unsafe extern "C" fn register_callback(
     _sd_ref: DNSServiceRef,
     _flags: DNSServiceFlags,
     error: DNSServiceErrorType,
-    _name: *const c_char,
-    _regtype: *const c_char,
-    _domain: *const c_char,
-    _context: *mut c_void,
+    name: *const c_char,
+    regtype: *const c_char,
+    domain: *const c_char,
+    context: *mut c_void,
 ) {
     println!("register_callback()");
 
@@ -58,5 +84,20 @@ extern "C" fn register_callback(
         panic!("register_callback reported error (code: {0})", error);
     }
 
-    println!();
+    let domain = util::normalize_domain(CStr::from_ptr(domain).to_str().unwrap());
+
+    let result = ServiceRegistration::builder()
+        .name(String::from(CStr::from_ptr(name).to_str().unwrap()))
+        .kind(String::from(CStr::from_ptr(regtype).to_str().unwrap()))
+        .domain(domain)
+        .build()
+        .expect("could not build ServiceRegistration");
+
+    println!("result = {:?}\n", result);
+
+    let context = BonjourServiceContext::from_raw(context);
+
+    if let Some(f) = &mut context.registered_callback {
+        f(result);
+    }
 }
