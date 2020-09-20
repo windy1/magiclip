@@ -203,8 +203,7 @@ impl ManagedDNSServiceRef {
             ));
         }
 
-        // self.process_result()
-        Ok(())
+        self.process_result()
     }
 
     fn process_result(&self) -> Result<(), String> {

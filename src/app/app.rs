@@ -38,9 +38,9 @@ async fn start_browser() {
 }
 
 fn on_service_discovered(service: ServiceResolution) {
-    if service.is_local() {
-        return;
-    }
+    // if service.is_local() {
+    //     return;
+    // }
 
     println!("service discovered {:?}", service);
 }

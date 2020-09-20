@@ -91,7 +91,7 @@ unsafe extern "C" fn browse_callback(
 ) {
     println!("browse_callback()");
 
-    let ctx = BonjourBrowserContext::from_raw(context);
+    let mut ctx = Box::new(BonjourBrowserContext::from_raw(context).clone());
 
     if error != 0 {
         panic!("browse_callback() reported error (code: {})", error);
@@ -119,7 +119,7 @@ unsafe extern "C" fn browse_callback(
                 .regtype(regtype)
                 .domain(domain)
                 .callback(Some(resolve_callback))
-                .context(Box::into_raw(Box::new(ctx.clone())) as *mut c_void)
+                .context(Box::into_raw(ctx) as *mut c_void)
                 .build()
                 .expect("could not build ServiceResolveParams"),
         )
@@ -140,7 +140,7 @@ unsafe extern "C" fn resolve_callback(
 ) {
     println!("resolve_callback()");
 
-    let ctx = BonjourBrowserContext::from_raw(context);
+    let mut ctx = Box::new(BonjourBrowserContext::from_raw(context).clone());
 
     println!("context = {:?}", ctx);
 
@@ -166,7 +166,7 @@ unsafe extern "C" fn resolve_callback(
                 .protocol(0)
                 .hostname(host_target)
                 .callback(Some(get_address_info_callback))
-                .context(Box::into_raw(Box::new(ctx.clone())) as *mut c_void)
+                .context(Box::into_raw(ctx) as *mut c_void)
                 .build()
                 .expect("could not build GetAddressInfoParams"),
         )
@@ -189,7 +189,7 @@ unsafe extern "C" fn get_address_info_callback(
 ) {
     println!("get_address_info_callback()");
 
-    let ctx = BonjourBrowserContext::from_raw(context);
+    let mut ctx = BonjourBrowserContext::from_raw(context).clone();
 
     println!("context = {:?}", ctx);
 
