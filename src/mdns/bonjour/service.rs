@@ -16,7 +16,7 @@ pub struct MdnsService {
 impl MdnsService {
     pub fn new(kind: &str, port: u16) -> Self {
         Self {
-            service: ManagedDNSServiceRef::new(),
+            service: ManagedDNSServiceRef::default(),
             kind: CString::new(kind).unwrap(),
             port,
         }

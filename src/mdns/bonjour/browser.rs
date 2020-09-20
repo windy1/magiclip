@@ -18,7 +18,7 @@ pub struct MdnsBrowser {
 impl MdnsBrowser {
     pub fn new(kind: &str) -> Self {
         Self {
-            service: ManagedDNSServiceRef::new(),
+            service: ManagedDNSServiceRef::default(),
             kind: CString::new(kind).unwrap(),
             context: Box::into_raw(Box::default()),
         }
@@ -110,7 +110,7 @@ unsafe extern "C" fn browse_callback(
 
     println!();
 
-    ManagedDNSServiceRef::new()
+    ManagedDNSServiceRef::default()
         .resolve_service(
             ServiceResolveParams::builder()
                 .flags(bonjour_sys::kDNSServiceFlagsForceMulticast)
@@ -158,7 +158,7 @@ unsafe extern "C" fn resolve_callback(
 
     println!();
 
-    ManagedDNSServiceRef::new()
+    ManagedDNSServiceRef::default()
         .get_address_info(
             GetAddressInfoParams::builder()
                 .flags(bonjour_sys::kDNSServiceFlagsForceMulticast)

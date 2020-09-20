@@ -58,12 +58,6 @@ pub struct GetAddressInfoParams {
 }
 
 impl ManagedDNSServiceRef {
-    pub fn new() -> Self {
-        Self {
-            service: ptr::null_mut(),
-        }
-    }
-
     pub fn register_service(
         &mut self,
         RegisterServiceParams {
@@ -212,6 +206,14 @@ impl ManagedDNSServiceRef {
             Err(format!("could not process service result (code: {})", err))
         } else {
             Ok(())
+        }
+    }
+}
+
+impl Default for ManagedDNSServiceRef {
+    fn default() -> Self {
+        Self {
+            service: ptr::null_mut(),
         }
     }
 }
