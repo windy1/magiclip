@@ -3,13 +3,12 @@ use super::backend::{
 };
 use super::util;
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
-use crate::util::{cstr, BuilderDelegate, CloneRaw, FromRaw};
+use crate::util::{cstr, BuilderDelegate, FromRaw};
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
 use std::ffi::CString;
 use std::fmt::{self, Formatter};
 use std::ptr;
-use std::sync::Arc;
 
 pub struct MdnsBrowser {
     service: ManagedDNSServiceRef,
@@ -30,9 +29,7 @@ impl MdnsBrowser {
         &self,
         resolver_found_callback: Box<dyn Fn(ServiceResolution)>,
     ) {
-        unsafe {
-            (*self.context).resolver_found_callback = Some(Arc::from(resolver_found_callback))
-        };
+        unsafe { (*self.context).resolver_found_callback = Some(resolver_found_callback) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -57,9 +54,9 @@ impl Drop for MdnsBrowser {
     }
 }
 
-#[derive(Default, Clone, FromRaw, CloneRaw)]
+#[derive(Default, FromRaw)]
 struct BonjourBrowserContext {
-    resolver_found_callback: Option<Arc<ResolverFoundCallback>>,
+    resolver_found_callback: Option<Box<ResolverFoundCallback>>,
     resolved_name: Option<String>,
     resolved_kind: Option<String>,
     resolved_domain: Option<String>,
@@ -95,7 +92,7 @@ unsafe extern "C" fn browse_callback(
 ) {
     println!("browse_callback()");
 
-    let mut ctx = BonjourBrowserContext::clone_raw(context);
+    let ctx = BonjourBrowserContext::from_raw(context);
 
     if error != 0 {
         panic!("browse_callback() reported error (code: {})", error);
@@ -116,7 +113,8 @@ unsafe extern "C" fn browse_callback(
                 .regtype(regtype)
                 .domain(domain)
                 .callback(Some(resolve_callback))
-                .context(Box::into_raw(ctx) as *mut c_void)
+                // .context(Box::into_raw(ctx) as *mut c_void)
+                .context(context)
                 .build()
                 .expect("could not build ServiceResolveParams"),
         )
@@ -166,9 +164,6 @@ unsafe extern "C" fn resolve_callback(
                 .expect("could not build GetAddressInfoParams"),
         )
         .unwrap();
-
-    // free context
-    Box::from_raw(context as *mut BonjourBrowserContext);
 }
 
 unsafe extern "C" fn get_address_info_callback(
