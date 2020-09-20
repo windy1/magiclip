@@ -60,6 +60,7 @@ struct BonjourBrowserContext {
     resolver_found_callback: Option<Arc<ResolverFoundCallback>>,
     resolved_name: Option<String>,
     resolved_kind: Option<String>,
+    resolved_domain: Option<String>,
     resolved_port: u16,
 }
 
@@ -74,6 +75,7 @@ impl fmt::Debug for BonjourBrowserContext {
         f.debug_struct("BonjourResolverContext")
             .field("resolved_name", &self.resolved_name)
             .field("resolved_kind", &self.resolved_kind)
+            .field("resolved_domain", &self.resolved_domain)
             .field("resolved_port", &self.resolved_port)
             .finish()
     }
@@ -107,6 +109,7 @@ unsafe extern "C" fn browse_callback(
 
     ctx.resolved_name = Some(String::from(name_r));
     ctx.resolved_kind = Some(String::from(regtype_r));
+    ctx.resolved_domain = Some(String::from(domain_r));
 
     println!();
 
@@ -211,7 +214,11 @@ unsafe extern "C" fn get_address_info_callback(
 
     let hostname_string = String::from(CStr::from_ptr(hostname).to_str().unwrap());
 
-    let domain = parse_domain(&hostname_string);
+    let mut domain = ctx.resolved_domain.take().unwrap();
+
+    if domain.chars().nth(domain.len() - 1).unwrap() == '.' {
+        domain = String::from(&domain[..domain.len() - 1]);
+    }
 
     println!("domain = {:?}", domain);
 
@@ -230,10 +237,4 @@ unsafe extern "C" fn get_address_info_callback(
     }
 
     println!();
-}
-
-fn parse_domain(host: &str) -> String {
-    let str = String::from(&host[..host.rfind('.').unwrap_or_else(|| host.len() + 1)]);
-    let str = String::from(&str[str.rfind('.').map(|i| i + 1).unwrap_or_else(|| 0)..]);
-    str
 }
