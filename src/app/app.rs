@@ -35,17 +35,22 @@ async fn start_service() {
 fn on_service_registered(service: ServiceRegistration) {
     println!("on_service_registered()");
     println!("service = {:?}\n", service);
-    thread::spawn(|| start_browser());
+    thread::spawn(move || start_browser(service.name().clone()));
 }
 
-fn start_browser() {
+fn start_browser(name: String) {
     println!("start_browser()\n");
     let mut browser = MdnsBrowser::new(SERVICE_TYPE);
-    browser.set_resolver_found_callback(Box::new(on_service_discovered));
+    browser.set_resolver_found_callback(Box::new(move |s| on_service_discovered(&name, s)));
     browser.start().unwrap()
 }
 
-fn on_service_discovered(service: ServiceResolution) {
+fn on_service_discovered(name: &str, service: ServiceResolution) {
+    if name == service.name() {
+        println!("ignoring {:?}", name);
+        return;
+    }
+
     println!("on_service_discovered()");
     println!("service = {:?}\n", service);
 }
