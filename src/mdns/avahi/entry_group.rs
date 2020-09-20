@@ -8,6 +8,7 @@ use avahi_sys::{
 use libc::{c_char, c_void};
 use std::ptr;
 
+#[derive(Debug)]
 pub struct ManagedAvahiEntryGroup {
     group: *mut AvahiEntryGroup,
 }
@@ -45,10 +46,33 @@ impl ManagedAvahiEntryGroup {
             port,
         }: AddServiceParams,
     ) -> Result<(), String> {
-        println!("group {:?}", self.group);
+        use std::ffi::CStr;
+
+        unsafe {
+            println!("add_service()");
+            println!("group = {:?}", self.group);
+            println!("interface = {:?}", interface);
+            println!("protocol = {:?}", protocol);
+            println!("flags = {:?}", flags);
+            println!("name = {:?}", CStr::from_ptr(name));
+            println!("kind = {:?}", CStr::from_ptr(kind));
+            println!("domain = {:?}", domain);
+            println!("host = {:?}", host);
+            println!("port = {:?}", port);
+        }
+
         let err = unsafe {
             avahi_entry_group_add_service(
-                self.group, interface, protocol, flags, name, kind, domain, host, port,
+                self.group,
+                interface,
+                protocol,
+                flags,
+                name,
+                kind,
+                domain,
+                host,
+                port,
+                ptr::null_mut() as *const c_char, // null terminated txt record list
             )
         };
 
