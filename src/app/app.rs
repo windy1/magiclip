@@ -1,6 +1,7 @@
 use super::AppServer;
 use crate::mdns::{MdnsBrowser, MdnsService, ServiceRegistration, ServiceResolution};
 use std::io;
+use std::thread;
 
 static SERVICE_TYPE: &'static str = "_magiclip._tcp";
 #[cfg(target_os = "linux")]
@@ -34,7 +35,7 @@ async fn start_service() {
 fn on_service_registered(service: ServiceRegistration) {
     println!("on_service_registered()");
     println!("service = {:?}\n", service);
-    std::thread::spawn(|| start_browser());
+    thread::spawn(|| start_browser());
 }
 
 fn start_browser() {
