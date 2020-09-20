@@ -101,9 +101,9 @@ unsafe extern "C" fn browse_callback(
         panic!("browse_callback() reported error (code: {})", error);
     }
 
-    ctx.resolved_name = Some(String::from(cstr::raw_to_str(name)));
-    ctx.resolved_kind = Some(String::from(cstr::raw_to_str(regtype)));
-    ctx.resolved_domain = Some(String::from(cstr::raw_to_str(domain)));
+    ctx.resolved_name = Some(cstr::copy_raw(name));
+    ctx.resolved_kind = Some(cstr::copy_raw(regtype));
+    ctx.resolved_domain = Some(cstr::copy_raw(domain));
 
     println!("context = {:?}\n", ctx);
 

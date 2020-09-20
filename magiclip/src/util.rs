@@ -25,4 +25,8 @@ pub mod cstr {
     pub unsafe fn raw_to_str<'a>(s: *const c_char) -> &'a str {
         CStr::from_ptr(s).to_str().unwrap()
     }
+
+    pub unsafe fn copy_raw(s: *const c_char) -> String {
+        String::from(raw_to_str(s))
+    }
 }
