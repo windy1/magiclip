@@ -11,3 +11,9 @@ pub trait FromRaw<T> {
         unsafe { &mut *(raw as *mut T) }
     }
 }
+
+pub trait CloneRaw<T: FromRaw<T> + Clone> {
+    fn clone_raw<'a>(raw: *mut c_void) -> Box<T> {
+        Box::new(T::from_raw(raw).clone())
+    }
+}

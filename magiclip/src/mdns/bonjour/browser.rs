@@ -3,7 +3,7 @@ use super::backend::{
 };
 use super::util;
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
-use crate::util::BuilderDelegate;
+use crate::util::{BuilderDelegate, CloneRaw, FromRaw};
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
 use std::ffi::{CStr, CString};
@@ -57,19 +57,13 @@ impl Drop for MdnsBrowser {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, FromRaw, CloneRaw)]
 struct BonjourBrowserContext {
     resolver_found_callback: Option<Arc<ResolverFoundCallback>>,
     resolved_name: Option<String>,
     resolved_kind: Option<String>,
     resolved_domain: Option<String>,
     resolved_port: u16,
-}
-
-impl BonjourBrowserContext {
-    fn from_raw<'a>(raw: *mut c_void) -> &'a mut Self {
-        unsafe { &mut *(raw as *mut BonjourBrowserContext) }
-    }
 }
 
 impl fmt::Debug for BonjourBrowserContext {
@@ -95,7 +89,7 @@ unsafe extern "C" fn browse_callback(
 ) {
     println!("browse_callback()");
 
-    let mut ctx = Box::new(BonjourBrowserContext::from_raw(context).clone());
+    let mut ctx = BonjourBrowserContext::clone_raw(context);
 
     if error != 0 {
         panic!("browse_callback() reported error (code: {})", error);
