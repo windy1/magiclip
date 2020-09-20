@@ -50,7 +50,7 @@ extern "C" fn register_callback(
     _name: *const c_char,
     _regtype: *const c_char,
     _domain: *const c_char,
-    context: *mut c_void,
+    _context: *mut c_void,
 ) {
     println!("register_callback()");
 

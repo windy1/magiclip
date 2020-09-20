@@ -110,7 +110,7 @@ unsafe extern "C" fn browse_callback(
 
     println!();
 
-    let result = ManagedDNSServiceRef::new()
+    ManagedDNSServiceRef::new()
         .resolve_service(
             ServiceResolveParams::builder()
                 .flags(bonjour_sys::kDNSServiceFlagsForceMulticast)
@@ -158,7 +158,7 @@ unsafe extern "C" fn resolve_callback(
 
     println!();
 
-    let result = ManagedDNSServiceRef::new()
+    ManagedDNSServiceRef::new()
         .get_address_info(
             GetAddressInfoParams::builder()
                 .flags(bonjour_sys::kDNSServiceFlagsForceMulticast)
@@ -184,7 +184,7 @@ unsafe extern "C" fn get_address_info_callback(
     error: DNSServiceErrorType,
     hostname: *const c_char,
     address: *const sockaddr,
-    ttl: u32,
+    _ttl: u32,
     context: *mut c_void,
 ) {
     println!("get_address_info_callback()");
