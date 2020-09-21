@@ -4,6 +4,7 @@ use avahi_sys::{
     AvahiProtocol, AvahiServiceResolver, AvahiServiceResolverCallback,
 };
 use libc::{c_char, c_void};
+use std::collections::HashMap;
 use std::ptr;
 
 #[derive(Debug)]
@@ -67,4 +68,22 @@ pub struct ManagedAvahiServiceResolverParams<'a> {
     flags: AvahiLookupFlags,
     callback: AvahiServiceResolverCallback,
     userdata: *mut c_void,
+}
+
+#[derive(Default, Debug)]
+pub struct ServiceResolverSet {
+    resolvers: HashMap<*mut AvahiServiceResolver, ManagedAvahiServiceResolver>,
+}
+
+impl ServiceResolverSet {
+    pub fn insert(&mut self, resolver: ManagedAvahiServiceResolver) {
+        self.resolvers.insert(resolver.resolver, resolver);
+    }
+
+    pub fn remove_raw(&mut self, raw: *mut AvahiServiceResolver) {
+        debug!("removing {:?}", raw);
+        if let Some(r) = self.resolvers.remove(&raw) {
+            debug!("removed {:?}", r);
+        }
+    }
 }
