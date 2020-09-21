@@ -3,7 +3,7 @@ use super::service_ref::{
     BrowseServicesParams, GetAddressInfoParams, ManagedDNSServiceRef, ServiceResolveParams,
 };
 use crate::builder::BuilderDelegate;
-use crate::ffi::cstr;
+use crate::ffi::{cstr, FromRaw};
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
