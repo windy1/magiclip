@@ -1,4 +1,7 @@
-pub type ResolverFoundCallback = dyn Fn(ServiceResolution);
+use std::any::Any;
+use std::sync::Arc;
+
+pub type ResolverFoundCallback = dyn Fn(ServiceResolution, Option<Arc<dyn Any>>);
 
 #[derive(Debug, Builder, BuilderDelegate, Getters)]
 pub struct ServiceResolution {

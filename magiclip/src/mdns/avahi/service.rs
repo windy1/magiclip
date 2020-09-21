@@ -9,6 +9,7 @@ use avahi_sys::{
     AvahiClient, AvahiClientFlags, AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState,
 };
 use libc::c_void;
+use std::any::Any;
 use std::ffi::CString;
 use std::fmt::{self, Formatter};
 use std::ptr;
@@ -31,6 +32,10 @@ impl MdnsService {
 
     pub fn set_registered_callback(&mut self, registered_callback: Box<ServiceRegisteredCallback>) {
         unsafe { (*self.context).registered_callback = Some(registered_callback) };
+    }
+
+    pub fn set_context(&mut self, context: Box<dyn Any>) {
+        unsafe { (*self.context).user_context = Some(context) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -64,6 +69,7 @@ struct AvahiServiceContext {
     port: u16,
     group: Option<ManagedAvahiEntryGroup>,
     registered_callback: Option<Box<ServiceRegisteredCallback>>,
+    user_context: Option<Box<dyn Any>>,
 }
 
 impl AvahiServiceContext {
@@ -74,6 +80,7 @@ impl AvahiServiceContext {
             port,
             group: None,
             registered_callback: None,
+            user_context: None,
         }
     }
 }
@@ -170,7 +177,7 @@ unsafe extern "C" fn entry_group_callback(
                 .expect("could not build ServiceRegistration");
 
             if let Some(f) = &context.registered_callback {
-                f(result);
+                f(result, context.user_context.take());
             } else {
                 warn!("Service registered but no callback was set: {:?}", result);
             }

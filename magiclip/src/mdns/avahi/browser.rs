@@ -15,7 +15,9 @@ use avahi_sys::{
     AvahiServiceResolver, AvahiStringList,
 };
 use libc::{c_char, c_void};
+use std::any::Any;
 use std::ffi::CString;
+use std::sync::Arc;
 use std::{fmt, ptr};
 
 #[derive(Debug)]
@@ -41,6 +43,10 @@ impl MdnsBrowser {
         resolver_found_callback: Box<ResolverFoundCallback>,
     ) {
         unsafe { (*self.context).resolver_found_callback = Some(resolver_found_callback) };
+    }
+
+    pub fn set_context(&mut self, context: Box<dyn Any>) {
+        unsafe { (*self.context).user_context = Some(Arc::from(context)) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -91,6 +97,7 @@ struct AvahiBrowserContext {
     client: Option<ManagedAvahiClient>,
     resolvers: ServiceResolverSet,
     resolver_found_callback: Option<Box<ResolverFoundCallback>>,
+    user_context: Option<Arc<dyn Any>>,
 }
 
 impl Default for AvahiBrowserContext {
@@ -99,6 +106,7 @@ impl Default for AvahiBrowserContext {
             client: None,
             resolvers: ServiceResolverSet::default(),
             resolver_found_callback: None,
+            user_context: None,
         }
     }
 }
@@ -194,7 +202,7 @@ unsafe extern "C" fn resolve_callback(
             debug!("Service resolved: {:?}", result);
 
             if let Some(f) = &context.resolver_found_callback {
-                f(result);
+                f(result, context.user_context.clone());
             } else {
                 warn!("Service resolved but no callback was set");
             }
