@@ -7,6 +7,7 @@ use bonjour_sys::{
 use libc::{c_char, c_void};
 use std::ptr;
 
+#[derive(Debug)]
 pub struct ManagedDNSServiceRef {
     service: DNSServiceRef,
 }
@@ -220,7 +221,6 @@ impl Default for ManagedDNSServiceRef {
 
 impl Drop for ManagedDNSServiceRef {
     fn drop(&mut self) {
-        println!("ManagedDNSServiceRef#drop()\n");
         unsafe {
             if self.service != ptr::null_mut() {
                 DNSServiceRefDeallocate(self.service);

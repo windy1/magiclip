@@ -11,6 +11,7 @@ use std::ptr;
 const BONJOUR_IF_UNSPEC: u32 = 0;
 const BONJOUR_RENAME_FLAGS: DNSServiceFlags = 0;
 
+#[derive(Debug)]
 pub struct MdnsService {
     service: ManagedDNSServiceRef,
     kind: CString,
@@ -33,7 +34,7 @@ impl MdnsService {
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        println!("MdnsService#start()\n");
+        debug!("Registering service: {:?}", self);
 
         self.service.register_service(
             RegisterServiceParams::builder()
@@ -73,10 +74,8 @@ unsafe extern "C" fn register_callback(
     domain: *const c_char,
     context: *mut c_void,
 ) {
-    println!("register_callback()");
-
     if error != 0 {
-        panic!("register_callback reported error (code: {0})", error);
+        panic!("register_callback() reported error (code: {0})", error);
     }
 
     let domain = compat::normalize_domain(cstr::raw_to_str(domain));
@@ -88,11 +87,11 @@ unsafe extern "C" fn register_callback(
         .build()
         .expect("could not build ServiceRegistration");
 
-    println!("result = {:?}\n", result);
-
     let context = BonjourServiceContext::from_raw(context);
 
     if let Some(f) = &mut context.registered_callback {
         f(result);
+    } else {
+        warn!("Service registered but no callback has been set");
     }
 }

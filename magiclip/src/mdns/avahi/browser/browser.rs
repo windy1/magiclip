@@ -39,7 +39,7 @@ impl MdnsBrowser {
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        println!("AvahiBrowser#start()\n");
+        debug!("AvahiBrowser#start()\n");
 
         self.poll = Some(ManagedAvahiSimplePoll::new()?);
 
@@ -108,7 +108,7 @@ unsafe extern "C" fn browse_callback(
     _flags: AvahiLookupResultFlags,
     userdata: *mut c_void,
 ) {
-    println!("browse_callback()");
+    debug!("browse_callback()");
 
     let mut context = &mut *(userdata as *mut AvahiBrowserContext);
 
@@ -137,7 +137,7 @@ unsafe extern "C" fn browse_callback(
         _ => {}
     };
 
-    println!();
+    debug!();
 }
 
 unsafe extern "C" fn resolve_callback(
@@ -161,7 +161,7 @@ unsafe extern "C" fn resolve_callback(
     let host_name_r = CStr::from_ptr(host_name).to_str().unwrap();
 
     match event {
-        avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FAILURE => println!(
+        avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FAILURE => debug!(
             "failed to resolve service `{}` of type `{}` in domain `{}`",
             name_r, kind_r, domain_r
         ),

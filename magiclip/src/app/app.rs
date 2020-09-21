@@ -1,4 +1,4 @@
-use super::AppServer;
+use super::MagiclipServer;
 use crate::mdns::{MdnsBrowser, MdnsService, ServiceRegistration, ServiceResolution};
 use std::io;
 use std::thread;
@@ -9,13 +9,13 @@ static SERVICE_NAME: &'static str = "magiclip";
 static PORT: u16 = 6060;
 
 #[derive(Default)]
-pub struct App {}
+pub struct Magiclip {}
 
-impl App {
+impl Magiclip {
     pub async fn start(&mut self) -> Result<(), io::Error> {
-        println!("App#start()\n");
+        env_logger::init();
         tokio::spawn(start_service());
-        AppServer::new("0.0.0.0", PORT).start().await
+        MagiclipServer::new("0.0.0.0", PORT).start().await
     }
 }
 
@@ -33,13 +33,11 @@ async fn start_service() {
 
 #[cfg(target_os = "macos")]
 fn on_service_registered(service: ServiceRegistration) {
-    println!("on_service_registered()");
-    println!("service = {:?}\n", service);
+    debug!("Service registered: {:?}", service);
     thread::spawn(move || start_browser(service.name().clone()));
 }
 
 fn start_browser(name: String) {
-    println!("start_browser()\n");
     let mut browser = MdnsBrowser::new(SERVICE_TYPE);
     browser.set_resolver_found_callback(Box::new(move |s| on_service_discovered(&name, s)));
     browser.start().unwrap()
@@ -47,10 +45,9 @@ fn start_browser(name: String) {
 
 fn on_service_discovered(name: &str, service: ServiceResolution) {
     if name == service.name() {
-        println!("ignoring {:?}", name);
+        debug!("Ignoring {:?}", name);
         return;
     }
 
-    println!("on_service_discovered()");
-    println!("service = {:?}\n", service);
+    debug!("Service discovered: {:?}", service);
 }

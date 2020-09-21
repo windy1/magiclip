@@ -31,7 +31,7 @@ impl MdnsService {
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        println!("MdnsService#start()\n");
+        debug!("MdnsService#start()\n");
 
         self.poll = Some(ManagedAvahiSimplePoll::new()?);
 
@@ -92,11 +92,11 @@ unsafe extern "C" fn client_callback(
     state: AvahiClientState,
     userdata: *mut c_void,
 ) {
-    println!("client_callback()");
+    debug!("client_callback()");
 
     let context = AvahiServiceContext::from_raw(userdata);
 
-    println!("context = {:?}", context);
+    debug!("context = {:?}", context);
 
     match state {
         avahi_sys::AvahiClientState_AVAHI_CLIENT_S_RUNNING => create_service(client, context),
@@ -105,19 +105,19 @@ unsafe extern "C" fn client_callback(
             if let Some(g) = &mut context.group {
                 g.reset();
             }
-            println!("group reset");
+            debug!("group reset");
         }
         _ => {}
     };
 
-    println!();
+    debug!();
 }
 
 fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
-    println!("create_service()");
+    debug!("create_service()");
 
     if context.group.is_none() {
-        println!("creating group\n");
+        debug!("creating group\n");
 
         context.group = Some(
             ManagedAvahiEntryGroup::new(
@@ -132,12 +132,12 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
         );
     }
 
-    println!("context = {:?}", context);
+    debug!("context = {:?}", context);
 
     let group = context.group.as_mut().unwrap();
 
     if group.is_empty() {
-        println!("adding service\n");
+        debug!("adding service\n");
 
         group
             .add_service(
@@ -156,7 +156,7 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
             .unwrap();
     }
 
-    println!();
+    debug!();
 }
 
 extern "C" fn entry_group_callback(
@@ -164,15 +164,15 @@ extern "C" fn entry_group_callback(
     state: AvahiEntryGroupState,
     userdata: *mut c_void,
 ) {
-    println!("entry_group_callback()");
+    debug!("entry_group_callback()");
 
     match state {
         avahi_sys::AvahiEntryGroupState_AVAHI_ENTRY_GROUP_ESTABLISHED => {
-            println!("group established");
-            println!("context = {:?}", AvahiServiceContext::from_raw(userdata));
+            debug!("group established");
+            debug!("context = {:?}", AvahiServiceContext::from_raw(userdata));
         }
         _ => {}
     };
 
-    println!();
+    debug!();
 }

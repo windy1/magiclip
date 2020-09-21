@@ -1,9 +1,9 @@
 extern crate tokio;
 
-use magiclip::App;
+use magiclip::Magiclip;
 use std::io;
 
 #[tokio::main]
 async fn main() -> Result<(), io::Error> {
-    App::default().start().await
+    Magiclip::default().start().await
 }

@@ -49,16 +49,16 @@ impl ManagedAvahiEntryGroup {
         use std::ffi::CStr;
 
         unsafe {
-            println!("add_service()");
-            println!("group = {:?}", self.group);
-            println!("interface = {:?}", interface);
-            println!("protocol = {:?}", protocol);
-            println!("flags = {:?}", flags);
-            println!("name = {:?}", CStr::from_ptr(name));
-            println!("kind = {:?}", CStr::from_ptr(kind));
-            println!("domain = {:?}", domain);
-            println!("host = {:?}", host);
-            println!("port = {:?}", port);
+            debug!("add_service()");
+            debug!("group = {:?}", self.group);
+            debug!("interface = {:?}", interface);
+            debug!("protocol = {:?}", protocol);
+            debug!("flags = {:?}", flags);
+            debug!("name = {:?}", CStr::from_ptr(name));
+            debug!("kind = {:?}", CStr::from_ptr(kind));
+            debug!("domain = {:?}", domain);
+            debug!("host = {:?}", host);
+            debug!("port = {:?}", port);
         }
 
         let err = unsafe {
@@ -76,7 +76,7 @@ impl ManagedAvahiEntryGroup {
             )
         };
 
-        println!("err = {:?}", err);
+        debug!("err = {:?}", err);
 
         if err < 0 {
             return Err(format!(

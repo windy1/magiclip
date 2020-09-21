@@ -11,6 +11,7 @@ use std::ffi::CString;
 use std::fmt::{self, Formatter};
 use std::ptr;
 
+#[derive(Debug)]
 pub struct MdnsBrowser {
     service: ManagedDNSServiceRef,
     kind: CString,
@@ -34,7 +35,7 @@ impl MdnsBrowser {
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        println!("MdnsBrowser#start()\n");
+        debug!("Browsing services: {:?}", self);
 
         self.service.browse_services(
             BrowseServicesParams::builder()
@@ -85,8 +86,6 @@ unsafe extern "C" fn browse_callback(
     domain: *const c_char,
     context: *mut c_void,
 ) {
-    println!("browse_callback()");
-
     let ctx = BonjourBrowserContext::from_raw(context);
 
     if error != 0 {
@@ -96,8 +95,6 @@ unsafe extern "C" fn browse_callback(
     ctx.resolved_name = Some(cstr::copy_raw(name));
     ctx.resolved_kind = Some(cstr::copy_raw(regtype));
     ctx.resolved_domain = Some(cstr::copy_raw(domain));
-
-    println!("context = {:?}\n", ctx);
 
     ManagedDNSServiceRef::default()
         .resolve_service(
@@ -127,11 +124,7 @@ unsafe extern "C" fn resolve_callback(
     _txt_record: *const c_uchar,
     context: *mut c_void,
 ) {
-    println!("resolve_callback()");
-
     let ctx = BonjourBrowserContext::from_raw(context);
-
-    println!("context = {:?}\n", ctx);
 
     if error != 0 {
         panic!("error reported by resolve_callback: (code: {})", error);
@@ -164,17 +157,12 @@ unsafe extern "C" fn get_address_info_callback(
     _ttl: u32,
     context: *mut c_void,
 ) {
-    println!("get_address_info_callback()");
-
     let ctx = BonjourBrowserContext::from_raw(context);
 
     // this callback runs multiple times for some reason
     if ctx.resolved_name.is_none() {
-        println!("duplicate call\n");
         return;
     }
-
-    println!("context = {:?}", ctx);
 
     if error != 0 {
         panic!(
@@ -186,10 +174,6 @@ unsafe extern "C" fn get_address_info_callback(
     let ip = get_ip(address as *const sockaddr_in);
     let hostname = cstr::copy_raw(hostname);
     let domain = compat::normalize_domain(&ctx.resolved_domain.take().unwrap());
-
-    println!("address = {:?}", ip);
-    println!("hostname = {:?}", hostname);
-    println!("domain = {:?}", domain);
 
     let result = ServiceResolution::builder()
         .name(ctx.resolved_name.take().unwrap())
@@ -204,8 +188,6 @@ unsafe extern "C" fn get_address_info_callback(
     if let Some(f) = &ctx.resolver_found_callback {
         f(result);
     }
-
-    println!();
 }
 
 extern "C" {

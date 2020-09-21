@@ -3,12 +3,12 @@ use std::io;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 
-pub struct AppServer {
+pub struct MagiclipServer {
     host: String,
     port: u16,
 }
 
-impl AppServer {
+impl MagiclipServer {
     pub fn new(host: &str, port: u16) -> Self {
         Self {
             host: host.to_string(),
@@ -22,7 +22,7 @@ impl AppServer {
         loop {
             let (mut socket, addr) = listener.accept().await?;
 
-            println!("New connection: {}", addr);
+            debug!("New connection: {}", addr);
 
             tokio::spawn(async move {
                 let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
