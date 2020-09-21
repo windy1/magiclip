@@ -3,7 +3,7 @@ use super::backend::{
 };
 use super::util;
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
-use crate::util::{cstr, BuilderDelegate, FromRaw};
+use crate::util::{cstr, BuilderDelegate};
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
 use std::ffi::CString;
