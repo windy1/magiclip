@@ -1,4 +1,4 @@
-use super::backend::{ManagedAvahiServiceBrowser, ManagedAvahiServiceBrowserParams};
+use super::raw_browser::{ManagedAvahiServiceBrowser, ManagedAvahiServiceBrowserParams};
 use crate::builder::BuilderDelegate;
 use crate::mdns::client::{ManagedAvahiClient, ManagedAvahiClientParams};
 use crate::mdns::constants;
