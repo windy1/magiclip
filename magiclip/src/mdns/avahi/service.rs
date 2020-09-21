@@ -1,4 +1,4 @@
-use super::client::{ManagedAvahiClient, ManagedAvahiClientParams};
+use super::client::{self, ManagedAvahiClient, ManagedAvahiClientParams};
 use super::constants;
 use super::entry_group::{AddServiceParams, ManagedAvahiEntryGroup, ManagedAvahiEntryGroupParams};
 use super::poll::ManagedAvahiSimplePoll;
@@ -27,10 +27,6 @@ impl MdnsService {
             poll: None,
             context: Box::into_raw(Box::new(AvahiServiceContext::new(kind, port))),
         }
-    }
-
-    pub fn set_name(&mut self, name: &str) {
-        unsafe { (*self.context).name = Some(CString::new(name.to_string()).unwrap()) };
     }
 
     pub fn set_registered_callback(&mut self, registered_callback: Box<ServiceRegisteredCallback>) {
@@ -114,6 +110,8 @@ unsafe extern "C" fn client_callback(
 }
 
 fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
+    context.name = Some(CString::new(client::get_host_name(client).unwrap().to_string()).unwrap());
+
     if context.group.is_none() {
         debug!("Creating group");
 

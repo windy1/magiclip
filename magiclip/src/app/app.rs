@@ -4,8 +4,6 @@ use std::io;
 use std::thread;
 
 static SERVICE_TYPE: &'static str = "_magiclip._tcp";
-#[cfg(target_os = "linux")]
-static SERVICE_NAME: &'static str = "magiclip";
 static PORT: u16 = 6060;
 
 #[derive(Default)]
@@ -21,12 +19,7 @@ impl Magiclip {
 
 async fn start_service() {
     let mut service = MdnsService::new(SERVICE_TYPE, PORT);
-
-    #[cfg(target_os = "linux")]
-    service.set_name(SERVICE_NAME);
-
     service.set_registered_callback(Box::new(on_service_registered));
-
     service.start().unwrap();
 }
 

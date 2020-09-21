@@ -189,8 +189,12 @@ unsafe extern "C" fn resolve_callback(
 
             let context = &mut *(userdata as *mut AvahiBrowserContext);
 
+            debug!("Service resolved: {:?}", result);
+
             if let Some(f) = &context.resolver_found_callback {
                 f(result);
+            } else {
+                warn!("Service resolved but no callback was set");
             }
         }
         _ => {}
