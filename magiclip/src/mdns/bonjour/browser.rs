@@ -75,12 +75,6 @@ impl fmt::Debug for BonjourBrowserContext {
     }
 }
 
-impl Drop for BonjourBrowserContext {
-    fn drop(&mut self) {
-        println!("BonjourResolverContext#drop()");
-    }
-}
-
 unsafe extern "C" fn browse_callback(
     _sd_ref: DNSServiceRef,
     _flags: DNSServiceFlags,
@@ -114,7 +108,6 @@ unsafe extern "C" fn browse_callback(
                 .regtype(regtype)
                 .domain(domain)
                 .callback(Some(resolve_callback))
-                // .context(Box::into_raw(ctx) as *mut c_void)
                 .context(context)
                 .build()
                 .expect("could not build ServiceResolveParams"),
@@ -127,7 +120,7 @@ unsafe extern "C" fn resolve_callback(
     _flags: DNSServiceFlags,
     interface_index: u32,
     error: DNSServiceErrorType,
-    fullname: *const c_char,
+    _fullname: *const c_char,
     host_target: *const c_char,
     port: u16,
     _txt_len: u16,
@@ -138,17 +131,11 @@ unsafe extern "C" fn resolve_callback(
 
     let ctx = BonjourBrowserContext::from_raw(context);
 
-    println!("context = {:?}", ctx);
+    println!("context = {:?}\n", ctx);
 
     if error != 0 {
         panic!("error reported by resolve_callback: (code: {})", error);
     }
-
-    let fullname_r = cstr::raw_to_str(fullname);
-    let host_target_r = cstr::raw_to_str(host_target);
-
-    println!("fullname = {:?}", fullname_r);
-    println!("host_target = {:?}\n", host_target_r);
 
     ctx.resolved_port = port;
 
@@ -183,7 +170,7 @@ unsafe extern "C" fn get_address_info_callback(
 
     // this callback runs multiple times for some reason
     if ctx.resolved_name.is_none() {
-        println!("duplicate call");
+        println!("duplicate call\n");
         return;
     }
 

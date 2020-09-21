@@ -11,7 +11,7 @@ pub struct ManagedDNSServiceRef {
     service: DNSServiceRef,
 }
 
-#[derive(Builder)]
+#[derive(Builder, BuilderDelegate)]
 pub struct RegisterServiceParams {
     flags: DNSServiceFlags,
     interface_index: u32,
@@ -26,7 +26,7 @@ pub struct RegisterServiceParams {
     context: *mut c_void,
 }
 
-#[derive(Builder)]
+#[derive(Builder, BuilderDelegate)]
 pub struct BrowseServicesParams {
     flags: DNSServiceFlags,
     interface_index: u32,
@@ -36,7 +36,7 @@ pub struct BrowseServicesParams {
     context: *mut c_void,
 }
 
-#[derive(Builder)]
+#[derive(Builder, BuilderDelegate)]
 pub struct ServiceResolveParams {
     flags: DNSServiceFlags,
     interface_index: u32,
@@ -47,7 +47,7 @@ pub struct ServiceResolveParams {
     context: *mut c_void,
 }
 
-#[derive(Builder)]
+#[derive(Builder, BuilderDelegate)]
 pub struct GetAddressInfoParams {
     flags: DNSServiceFlags,
     interface_index: u32,
@@ -226,29 +226,5 @@ impl Drop for ManagedDNSServiceRef {
                 DNSServiceRefDeallocate(self.service);
             }
         }
-    }
-}
-
-impl RegisterServiceParams {
-    pub fn builder() -> RegisterServiceParamsBuilder {
-        RegisterServiceParamsBuilder::default()
-    }
-}
-
-impl BrowseServicesParams {
-    pub fn builder() -> BrowseServicesParamsBuilder {
-        BrowseServicesParamsBuilder::default()
-    }
-}
-
-impl ServiceResolveParams {
-    pub fn builder() -> ServiceResolveParamsBuilder {
-        ServiceResolveParamsBuilder::default()
-    }
-}
-
-impl GetAddressInfoParams {
-    pub fn builder() -> GetAddressInfoParamsBuilder {
-        GetAddressInfoParamsBuilder::default()
     }
 }
