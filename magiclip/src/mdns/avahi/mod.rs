@@ -1,6 +1,7 @@
 mod browser;
 mod service;
 
+pub mod address;
 pub mod client;
 pub mod constants;
 pub mod entry_group;

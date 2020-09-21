@@ -109,7 +109,7 @@ unsafe extern "C" fn client_callback(
     };
 }
 
-fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
+unsafe fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
     context.name = Some(CString::new(client::get_host_name(client).unwrap().to_string()).unwrap());
 
     if context.group.is_none() {

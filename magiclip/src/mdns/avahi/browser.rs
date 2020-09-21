@@ -1,5 +1,7 @@
+use super::address;
 use super::raw_browser::{ManagedAvahiServiceBrowser, ManagedAvahiServiceBrowserParams};
 use crate::builder::BuilderDelegate;
+use crate::ffi::cstr;
 use crate::mdns::client::{ManagedAvahiClient, ManagedAvahiClientParams};
 use crate::mdns::constants;
 use crate::mdns::poll::ManagedAvahiSimplePoll;
@@ -152,36 +154,24 @@ unsafe extern "C" fn resolve_callback(
     _flags: AvahiLookupResultFlags,
     userdata: *mut c_void,
 ) {
-    let name_r = CStr::from_ptr(name).to_str().unwrap();
-    let kind_r = CStr::from_ptr(kind).to_str().unwrap();
-    let domain_r = CStr::from_ptr(domain).to_str().unwrap();
-    let host_name_r = CStr::from_ptr(host_name).to_str().unwrap();
+    let name = cstr::raw_to_str(name);
+    let kind = cstr::raw_to_str(kind);
+    let domain = cstr::raw_to_str(domain);
+    let host_name = cstr::raw_to_str(host_name);
 
     match event {
         avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FAILURE => warn!(
             "failed to resolve service `{}` of type `{}` in domain `{}`",
-            name_r, kind_r, domain_r
+            name, kind, domain
         ),
         avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FOUND => {
-            let address = CString::from_vec_unchecked(vec![0; constants::AVAHI_ADDRESS_STR_MAX]);
-
-            avahi_address_snprint(
-                address.as_ptr() as *mut c_char,
-                mem::size_of_val(&address),
-                addr,
-            );
-
-            let address = address
-                .into_string()
-                .unwrap()
-                .trim_matches(char::from(0))
-                .to_string();
+            let address = address::get_ip(addr);
 
             let result = ServiceResolution::builder()
-                .name(name_r.to_string())
-                .kind(kind_r.to_string())
-                .domain(domain_r.to_string())
-                .host_name(host_name_r.to_string())
+                .name(name.to_string())
+                .kind(kind.to_string())
+                .domain(domain.to_string())
+                .host_name(host_name.to_string())
                 .address(address)
                 .port(port)
                 .build()

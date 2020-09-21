@@ -62,10 +62,10 @@ pub struct ManagedAvahiClientParams<'a> {
     userdata: *mut c_void,
 }
 
-pub fn get_host_name<'a>(client: *mut AvahiClient) -> Result<&'a str, String> {
-    let host_name = unsafe { avahi_client_get_host_name(client) };
+pub unsafe fn get_host_name<'a>(client: *mut AvahiClient) -> Result<&'a str, String> {
+    let host_name = avahi_client_get_host_name(client);
     if host_name != ptr::null_mut() {
-        Ok(unsafe { cstr::raw_to_str(host_name) })
+        Ok(cstr::raw_to_str(host_name))
     } else {
         Err("could not get host name from AvahiClient".to_string())
     }
