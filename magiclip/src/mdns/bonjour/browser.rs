@@ -2,8 +2,9 @@ use super::backend::{
     BrowseServicesParams, GetAddressInfoParams, ManagedDNSServiceRef, ServiceResolveParams,
 };
 use super::util;
+use crate::builder::BuilderDelegate;
+use crate::ffi::cstr;
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
-use crate::util::{cstr, BuilderDelegate};
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
 use std::ffi::CString;

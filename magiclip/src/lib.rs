@@ -17,7 +17,8 @@ extern crate libc;
 extern crate tokio;
 
 mod app;
+pub mod builder;
+pub mod ffi;
 pub mod mdns;
-pub mod util;
 
 pub use app::*;

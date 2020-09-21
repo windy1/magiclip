@@ -1,8 +1,8 @@
 use super::backend::{ManagedDNSServiceRef, RegisterServiceParams};
 use super::util;
+use crate::builder::BuilderDelegate;
+use crate::ffi::cstr;
 use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
-use crate::util::cstr;
-use crate::util::BuilderDelegate;
 use bonjour_sys::{DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_void};
 use std::ffi::CString;

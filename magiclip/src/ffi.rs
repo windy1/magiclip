@@ -1,11 +1,5 @@
 use libc::c_void;
 
-pub trait BuilderDelegate<T: Default> {
-    fn builder() -> T {
-        T::default()
-    }
-}
-
 pub trait FromRaw<T> {
     unsafe fn from_raw<'a>(raw: *mut c_void) -> &'a mut T {
         &mut *(raw as *mut T)
