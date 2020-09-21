@@ -1,5 +1,5 @@
 use super::client::ManagedAvahiClient;
-use crate::util::BuilderDelegate;
+use crate::builder::BuilderDelegate;
 use avahi_sys::{
     avahi_service_resolver_free, avahi_service_resolver_new, AvahiIfIndex, AvahiLookupFlags,
     AvahiProtocol, AvahiServiceResolver, AvahiServiceResolverCallback,

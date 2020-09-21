@@ -1,5 +1,5 @@
 use super::err;
-use crate::util::BuilderDelegate;
+use crate::builder::BuilderDelegate;
 use avahi_sys::{
     avahi_entry_group_add_service, avahi_entry_group_commit, avahi_entry_group_free,
     avahi_entry_group_is_empty, avahi_entry_group_new, avahi_entry_group_reset, AvahiClient,

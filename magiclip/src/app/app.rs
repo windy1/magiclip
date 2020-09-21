@@ -25,13 +25,11 @@ async fn start_service() {
     #[cfg(target_os = "linux")]
     service.set_name(SERVICE_NAME);
 
-    #[cfg(target_os = "macos")]
     service.set_registered_callback(Box::new(on_service_registered));
 
     service.start().unwrap();
 }
 
-#[cfg(target_os = "macos")]
 fn on_service_registered(service: ServiceRegistration) {
     debug!("Service registered: {:?}", service);
     thread::spawn(move || start_browser(service.name().clone()));

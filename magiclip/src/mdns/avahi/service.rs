@@ -2,7 +2,9 @@ use super::client::{ManagedAvahiClient, ManagedAvahiClientParams};
 use super::constants;
 use super::entry_group::{AddServiceParams, ManagedAvahiEntryGroup, ManagedAvahiEntryGroupParams};
 use super::poll::ManagedAvahiSimplePoll;
-use crate::util::BuilderDelegate;
+use crate::builder::BuilderDelegate;
+use crate::ffi::{cstr, FromRaw};
+use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
 use avahi_sys::{
     AvahiClient, AvahiClientFlags, AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState,
 };
@@ -30,6 +32,10 @@ impl MdnsService {
         unsafe { (*self.context).name = Some(CString::new(name.to_string()).unwrap()) };
     }
 
+    pub fn set_registered_callback(&mut self, registered_callback: Box<ServiceRegisteredCallback>) {
+        unsafe { (*self.context).registered_callback = Some(registered_callback) };
+    }
+
     pub fn start(&mut self) -> Result<(), String> {
         debug!("MdnsService#start()\n");
 
@@ -54,11 +60,13 @@ impl Drop for MdnsService {
     }
 }
 
+#[derive(FromRaw)]
 struct AvahiServiceContext {
     name: Option<CString>,
     kind: CString,
     port: u16,
     group: Option<ManagedAvahiEntryGroup>,
+    registered_callback: Option<Box<ServiceRegisteredCallback>>,
 }
 
 impl AvahiServiceContext {
@@ -68,11 +76,8 @@ impl AvahiServiceContext {
             kind: CString::new(kind).unwrap(),
             port,
             group: None,
+            registered_callback: None,
         }
-    }
-
-    fn from_raw<'a>(raw: *mut c_void) -> &'a mut Self {
-        unsafe { &mut *(raw as *mut Self) }
     }
 }
 
@@ -109,8 +114,6 @@ unsafe extern "C" fn client_callback(
         }
         _ => {}
     };
-
-    debug!();
 }
 
 fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
@@ -155,11 +158,9 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
             )
             .unwrap();
     }
-
-    debug!();
 }
 
-extern "C" fn entry_group_callback(
+unsafe extern "C" fn entry_group_callback(
     _group: *mut AvahiEntryGroup,
     state: AvahiEntryGroupState,
     userdata: *mut c_void,
@@ -169,10 +170,22 @@ extern "C" fn entry_group_callback(
     match state {
         avahi_sys::AvahiEntryGroupState_AVAHI_ENTRY_GROUP_ESTABLISHED => {
             debug!("group established");
-            debug!("context = {:?}", AvahiServiceContext::from_raw(userdata));
+            let context = AvahiServiceContext::from_raw(userdata);
+            debug!("context = {:?}", context);
+
+            let result = ServiceRegistration::builder()
+                .name(cstr::copy_raw(context.name.as_ref().unwrap().as_ptr()))
+                .kind(cstr::copy_raw(context.kind.as_ptr()))
+                .domain("local".to_string())
+                .build()
+                .expect("could not build ServiceRegistration");
+
+            if let Some(f) = &context.registered_callback {
+                f(result);
+            } else {
+                warn!("Service registered but no callback was set: {:?}", result);
+            }
         }
         _ => {}
     };
-
-    debug!();
 }

@@ -1,10 +1,10 @@
 use super::backend::{ManagedAvahiServiceBrowser, ManagedAvahiServiceBrowserParams};
+use crate::builder::BuilderDelegate;
 use crate::mdns::client::{ManagedAvahiClient, ManagedAvahiClientParams};
 use crate::mdns::constants;
 use crate::mdns::poll::ManagedAvahiSimplePoll;
 use crate::mdns::resolver::{ManagedAvahiServiceResolver, ManagedAvahiServiceResolverParams};
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
-use crate::util::BuilderDelegate;
 use avahi_sys::{
     avahi_address_snprint, AvahiAddress, AvahiBrowserEvent, AvahiClient, AvahiClientFlags,
     AvahiClientState, AvahiIfIndex, AvahiLookupResultFlags, AvahiProtocol, AvahiResolverEvent,
@@ -136,8 +136,6 @@ unsafe extern "C" fn browse_callback(
         avahi_sys::AvahiBrowserEvent_AVAHI_BROWSER_FAILURE => panic!("browser failure"),
         _ => {}
     };
-
-    debug!();
 }
 
 unsafe extern "C" fn resolve_callback(

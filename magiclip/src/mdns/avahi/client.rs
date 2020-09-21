@@ -1,6 +1,6 @@
 use super::err;
 use super::poll::ManagedAvahiSimplePoll;
-use crate::util::BuilderDelegate;
+use crate::builder::BuilderDelegate;
 use avahi_sys::{
     avahi_client_free, avahi_client_new, avahi_simple_poll_get, AvahiClient, AvahiClientCallback,
     AvahiClientFlags,
