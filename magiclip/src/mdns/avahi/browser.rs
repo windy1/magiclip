@@ -8,13 +8,13 @@ use crate::mdns::poll::ManagedAvahiSimplePoll;
 use crate::mdns::resolver::{ManagedAvahiServiceResolver, ManagedAvahiServiceResolverParams};
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
 use avahi_sys::{
-    avahi_address_snprint, AvahiAddress, AvahiBrowserEvent, AvahiClient, AvahiClientFlags,
-    AvahiClientState, AvahiIfIndex, AvahiLookupResultFlags, AvahiProtocol, AvahiResolverEvent,
-    AvahiServiceBrowser, AvahiServiceResolver, AvahiStringList,
+    AvahiAddress, AvahiBrowserEvent, AvahiClient, AvahiClientFlags, AvahiClientState, AvahiIfIndex,
+    AvahiLookupResultFlags, AvahiProtocol, AvahiResolverEvent, AvahiServiceBrowser,
+    AvahiServiceResolver, AvahiStringList,
 };
 use libc::{c_char, c_void};
-use std::ffi::{CStr, CString};
-use std::{mem, ptr};
+use std::ffi::CString;
+use std::ptr;
 
 #[derive(Debug)]
 pub struct MdnsBrowser {
@@ -111,6 +111,8 @@ unsafe extern "C" fn browse_callback(
     _flags: AvahiLookupResultFlags,
     userdata: *mut c_void,
 ) {
+    debug!("browse_callback()");
+
     let mut context = &mut *(userdata as *mut AvahiBrowserContext);
 
     match event {
@@ -154,6 +156,8 @@ unsafe extern "C" fn resolve_callback(
     _flags: AvahiLookupResultFlags,
     userdata: *mut c_void,
 ) {
+    debug!("resolve_callback()");
+
     let name = cstr::raw_to_str(name);
     let kind = cstr::raw_to_str(kind);
     let domain = cstr::raw_to_str(domain);
