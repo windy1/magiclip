@@ -1,5 +1,5 @@
-use super::backend::{ManagedDNSServiceRef, RegisterServiceParams};
-use super::util;
+use super::compat;
+use super::service_ref::{ManagedDNSServiceRef, RegisterServiceParams};
 use crate::builder::BuilderDelegate;
 use crate::ffi::cstr;
 use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
@@ -79,7 +79,7 @@ unsafe extern "C" fn register_callback(
         panic!("register_callback reported error (code: {0})", error);
     }
 
-    let domain = util::normalize_domain(cstr::raw_to_str(domain));
+    let domain = compat::normalize_domain(cstr::raw_to_str(domain));
 
     let result = ServiceRegistration::builder()
         .name(cstr::copy_raw(name))

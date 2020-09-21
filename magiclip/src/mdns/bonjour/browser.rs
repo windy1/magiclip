@@ -1,7 +1,7 @@
-use super::backend::{
+use super::compat;
+use super::service_ref::{
     BrowseServicesParams, GetAddressInfoParams, ManagedDNSServiceRef, ServiceResolveParams,
 };
-use super::util;
 use crate::builder::BuilderDelegate;
 use crate::ffi::cstr;
 use crate::mdns::{ResolverFoundCallback, ServiceResolution};
@@ -198,7 +198,7 @@ unsafe extern "C" fn get_address_info_callback(
 
     let ip = get_ip(address as *const sockaddr_in);
     let hostname = cstr::copy_raw(hostname);
-    let domain = util::normalize_domain(&ctx.resolved_domain.take().unwrap());
+    let domain = compat::normalize_domain(&ctx.resolved_domain.take().unwrap());
 
     println!("address = {:?}", ip);
     println!("hostname = {:?}", hostname);

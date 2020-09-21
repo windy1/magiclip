@@ -1,8 +1,8 @@
 mod browser;
 mod service;
 
-pub mod backend;
-pub mod util;
+pub mod compat;
+pub mod service_ref;
 
 pub use browser::*;
 pub use service::*;

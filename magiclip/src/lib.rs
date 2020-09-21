@@ -2,8 +2,6 @@
 // extern crate derive_new;
 #[macro_use]
 extern crate derive_builder;
-// #[macro_use]
-// extern crate getset;
 #[macro_use]
 extern crate derive_getters;
 #[macro_use]
