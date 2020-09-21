@@ -3,7 +3,7 @@ use super::constants;
 use super::entry_group::{AddServiceParams, ManagedAvahiEntryGroup, ManagedAvahiEntryGroupParams};
 use super::poll::ManagedAvahiSimplePoll;
 use crate::builder::BuilderDelegate;
-use crate::ffi::{cstr, FromRaw};
+use crate::ffi::{cstr, AsRaw, FromRaw};
 use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
 use avahi_sys::{
     AvahiClient, AvahiClientFlags, AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState,
@@ -13,6 +13,7 @@ use std::ffi::CString;
 use std::fmt::{self, Formatter};
 use std::ptr;
 
+#[derive(Debug)]
 pub struct MdnsService {
     client: Option<ManagedAvahiClient>,
     poll: Option<ManagedAvahiSimplePoll>,
@@ -37,7 +38,7 @@ impl MdnsService {
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        debug!("MdnsService#start()\n");
+        debug!("Registering service: {:?}", self);
 
         self.poll = Some(ManagedAvahiSimplePoll::new()?);
 
@@ -60,7 +61,7 @@ impl Drop for MdnsService {
     }
 }
 
-#[derive(FromRaw)]
+#[derive(FromRaw, AsRaw)]
 struct AvahiServiceContext {
     name: Option<CString>,
     kind: CString,
@@ -97,37 +98,31 @@ unsafe extern "C" fn client_callback(
     state: AvahiClientState,
     userdata: *mut c_void,
 ) {
-    debug!("client_callback()");
-
     let context = AvahiServiceContext::from_raw(userdata);
-
-    debug!("context = {:?}", context);
 
     match state {
         avahi_sys::AvahiClientState_AVAHI_CLIENT_S_RUNNING => create_service(client, context),
         avahi_sys::AvahiClientState_AVAHI_CLIENT_FAILURE => panic!("client failure"),
         avahi_sys::AvahiClientState_AVAHI_CLIENT_S_REGISTERING => {
             if let Some(g) = &mut context.group {
+                debug!("Group reset");
                 g.reset();
             }
-            debug!("group reset");
         }
         _ => {}
     };
 }
 
 fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
-    debug!("create_service()");
-
     if context.group.is_none() {
-        debug!("creating group\n");
+        debug!("Creating group");
 
         context.group = Some(
             ManagedAvahiEntryGroup::new(
                 ManagedAvahiEntryGroupParams::builder()
                     .client(client)
                     .callback(Some(entry_group_callback))
-                    .userdata(context as *mut _ as *mut c_void)
+                    .userdata(context.as_raw())
                     .build()
                     .unwrap(),
             )
@@ -135,12 +130,10 @@ fn create_service(client: *mut AvahiClient, context: &mut AvahiServiceContext) {
         );
     }
 
-    debug!("context = {:?}", context);
-
     let group = context.group.as_mut().unwrap();
 
     if group.is_empty() {
-        debug!("adding service\n");
+        debug!("Adding service");
 
         group
             .add_service(
@@ -165,13 +158,11 @@ unsafe extern "C" fn entry_group_callback(
     state: AvahiEntryGroupState,
     userdata: *mut c_void,
 ) {
-    debug!("entry_group_callback()");
-
     match state {
         avahi_sys::AvahiEntryGroupState_AVAHI_ENTRY_GROUP_ESTABLISHED => {
-            debug!("group established");
+            debug!("Group established");
+
             let context = AvahiServiceContext::from_raw(userdata);
-            debug!("context = {:?}", context);
 
             let result = ServiceRegistration::builder()
                 .name(cstr::copy_raw(context.name.as_ref().unwrap().as_ptr()))

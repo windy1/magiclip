@@ -36,6 +36,22 @@ fn impl_clone_raw(ast: &DeriveInput) -> TokenStream {
     gen.into()
 }
 
+#[proc_macro_derive(AsRaw)]
+pub fn as_raw_macro_derive(input: TokenStream) -> TokenStream {
+    impl_as_raw(&syn::parse(input).unwrap())
+}
+
+fn impl_as_raw(ast: &DeriveInput) -> TokenStream {
+    let name = &ast.ident;
+    let generics = &ast.generics;
+
+    let gen = quote! {
+        impl #generics crate::ffi::AsRaw for #name #generics {}
+    };
+
+    gen.into()
+}
+
 #[proc_macro_derive(BuilderDelegate)]
 pub fn builder_delegate_macro_derive(input: TokenStream) -> TokenStream {
     impl_builder_delegate(&syn::parse(input).unwrap())

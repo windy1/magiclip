@@ -12,6 +12,12 @@ pub trait CloneRaw<T: FromRaw<T> + Clone> {
     }
 }
 
+pub trait AsRaw {
+    fn as_raw(&mut self) -> *mut c_void {
+        self as *mut _ as *mut c_void
+    }
+}
+
 pub mod cstr {
     use libc::c_char;
     use std::ffi::CStr;

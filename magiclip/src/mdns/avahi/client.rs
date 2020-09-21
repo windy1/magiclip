@@ -8,6 +8,7 @@ use avahi_sys::{
 use libc::{c_int, c_void};
 use std::ptr;
 
+#[derive(Debug)]
 pub struct ManagedAvahiClient {
     pub(super) client: *mut AvahiClient,
 }

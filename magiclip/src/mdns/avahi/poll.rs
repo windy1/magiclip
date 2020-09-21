@@ -4,6 +4,7 @@ use avahi_sys::{
 };
 use std::ptr;
 
+#[derive(Debug)]
 pub struct ManagedAvahiSimplePoll {
     pub(super) poll: *mut AvahiSimplePoll,
 }
