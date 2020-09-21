@@ -14,6 +14,7 @@ use libc::{c_char, c_void};
 use std::ffi::{CStr, CString};
 use std::{mem, ptr};
 
+#[derive(Debug)]
 pub struct MdnsBrowser {
     poll: Option<ManagedAvahiSimplePoll>,
     browser: Option<ManagedAvahiServiceBrowser>,
@@ -39,7 +40,7 @@ impl MdnsBrowser {
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        debug!("AvahiBrowser#start()\n");
+        debug!("Browsing services: {:?}", self);
 
         self.poll = Some(ManagedAvahiSimplePoll::new()?);
 
@@ -108,8 +109,6 @@ unsafe extern "C" fn browse_callback(
     _flags: AvahiLookupResultFlags,
     userdata: *mut c_void,
 ) {
-    debug!("browse_callback()");
-
     let mut context = &mut *(userdata as *mut AvahiBrowserContext);
 
     match event {
@@ -159,7 +158,7 @@ unsafe extern "C" fn resolve_callback(
     let host_name_r = CStr::from_ptr(host_name).to_str().unwrap();
 
     match event {
-        avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FAILURE => debug!(
+        avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FAILURE => warn!(
             "failed to resolve service `{}` of type `{}` in domain `{}`",
             name_r, kind_r, domain_r
         ),

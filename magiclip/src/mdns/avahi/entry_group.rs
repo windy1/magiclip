@@ -1,5 +1,4 @@
 use super::err;
-use crate::builder::BuilderDelegate;
 use avahi_sys::{
     avahi_entry_group_add_service, avahi_entry_group_commit, avahi_entry_group_free,
     avahi_entry_group_is_empty, avahi_entry_group_new, avahi_entry_group_reset, AvahiClient,
@@ -46,21 +45,6 @@ impl ManagedAvahiEntryGroup {
             port,
         }: AddServiceParams,
     ) -> Result<(), String> {
-        use std::ffi::CStr;
-
-        unsafe {
-            debug!("add_service()");
-            debug!("group = {:?}", self.group);
-            debug!("interface = {:?}", interface);
-            debug!("protocol = {:?}", protocol);
-            debug!("flags = {:?}", flags);
-            debug!("name = {:?}", CStr::from_ptr(name));
-            debug!("kind = {:?}", CStr::from_ptr(kind));
-            debug!("domain = {:?}", domain);
-            debug!("host = {:?}", host);
-            debug!("port = {:?}", port);
-        }
-
         let err = unsafe {
             avahi_entry_group_add_service(
                 self.group,
@@ -75,8 +59,6 @@ impl ManagedAvahiEntryGroup {
                 ptr::null_mut() as *const c_char, // null terminated txt record list
             )
         };
-
-        debug!("err = {:?}", err);
 
         if err < 0 {
             return Err(format!(
@@ -108,16 +90,14 @@ impl Drop for ManagedAvahiEntryGroup {
     }
 }
 
-#[derive(Builder)]
+#[derive(Builder, BuilderDelegate)]
 pub struct ManagedAvahiEntryGroupParams {
     client: *mut AvahiClient,
     callback: AvahiEntryGroupCallback,
     userdata: *mut c_void,
 }
 
-impl<'a> BuilderDelegate<ManagedAvahiEntryGroupParamsBuilder> for ManagedAvahiEntryGroupParams {}
-
-#[derive(Builder)]
+#[derive(Builder, BuilderDelegate)]
 pub struct AddServiceParams {
     interface: AvahiIfIndex,
     protocol: AvahiProtocol,
@@ -128,5 +108,3 @@ pub struct AddServiceParams {
     host: *const c_char,
     port: u16,
 }
-
-impl BuilderDelegate<AddServiceParamsBuilder> for AddServiceParams {}

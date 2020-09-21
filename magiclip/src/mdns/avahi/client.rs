@@ -1,6 +1,5 @@
 use super::err;
 use super::poll::ManagedAvahiSimplePoll;
-use crate::builder::BuilderDelegate;
 use avahi_sys::{
     avahi_client_free, avahi_client_new, avahi_simple_poll_get, AvahiClient, AvahiClientCallback,
     AvahiClientFlags,
@@ -11,14 +10,6 @@ use std::ptr;
 #[derive(Debug)]
 pub struct ManagedAvahiClient {
     pub(super) client: *mut AvahiClient,
-}
-
-#[derive(Builder)]
-pub struct ManagedAvahiClientParams<'a> {
-    poll: &'a ManagedAvahiSimplePoll,
-    flags: AvahiClientFlags,
-    callback: AvahiClientCallback,
-    userdata: *mut c_void,
 }
 
 impl ManagedAvahiClient {
@@ -62,4 +53,10 @@ impl Drop for ManagedAvahiClient {
     }
 }
 
-impl<'a> BuilderDelegate<ManagedAvahiClientParamsBuilder<'a>> for ManagedAvahiClientParams<'a> {}
+#[derive(Builder, BuilderDelegate)]
+pub struct ManagedAvahiClientParams<'a> {
+    poll: &'a ManagedAvahiSimplePoll,
+    flags: AvahiClientFlags,
+    callback: AvahiClientCallback,
+    userdata: *mut c_void,
+}

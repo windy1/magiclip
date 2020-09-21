@@ -1,5 +1,4 @@
 use super::client::ManagedAvahiClient;
-use crate::builder::BuilderDelegate;
 use avahi_sys::{
     avahi_service_resolver_free, avahi_service_resolver_new, AvahiIfIndex, AvahiLookupFlags,
     AvahiProtocol, AvahiServiceResolver, AvahiServiceResolverCallback,
@@ -7,6 +6,7 @@ use avahi_sys::{
 use libc::{c_char, c_void};
 use std::ptr;
 
+#[derive(Debug)]
 pub struct ManagedAvahiServiceResolver {
     resolver: *mut AvahiServiceResolver,
 }
@@ -55,7 +55,7 @@ impl Drop for ManagedAvahiServiceResolver {
     }
 }
 
-#[derive(Builder)]
+#[derive(Builder, BuilderDelegate)]
 pub struct ManagedAvahiServiceResolverParams<'a> {
     client: &'a ManagedAvahiClient,
     interface: AvahiIfIndex,
@@ -67,9 +67,4 @@ pub struct ManagedAvahiServiceResolverParams<'a> {
     flags: AvahiLookupFlags,
     callback: AvahiServiceResolverCallback,
     userdata: *mut c_void,
-}
-
-impl<'a> BuilderDelegate<ManagedAvahiServiceResolverParamsBuilder<'a>>
-    for ManagedAvahiServiceResolverParams<'a>
-{
 }

@@ -1,4 +1,3 @@
-use crate::builder::BuilderDelegate;
 use crate::mdns::client::ManagedAvahiClient;
 use avahi_sys::{
     avahi_service_browser_free, avahi_service_browser_new, AvahiIfIndex, AvahiLookupFlags,
@@ -7,6 +6,7 @@ use avahi_sys::{
 use libc::{c_char, c_void};
 use std::ptr;
 
+#[derive(Debug)]
 pub struct ManagedAvahiServiceBrowser {
     browser: *mut AvahiServiceBrowser,
 }
@@ -51,7 +51,7 @@ impl Drop for ManagedAvahiServiceBrowser {
     }
 }
 
-#[derive(Builder)]
+#[derive(Builder, BuilderDelegate)]
 pub struct ManagedAvahiServiceBrowserParams<'a> {
     client: &'a ManagedAvahiClient,
     interface: AvahiIfIndex,
@@ -61,9 +61,4 @@ pub struct ManagedAvahiServiceBrowserParams<'a> {
     flags: AvahiLookupFlags,
     callback: AvahiServiceBrowserCallback,
     userdata: *mut c_void,
-}
-
-impl<'a> BuilderDelegate<ManagedAvahiServiceBrowserParamsBuilder<'a>>
-    for ManagedAvahiServiceBrowserParams<'a>
-{
 }
