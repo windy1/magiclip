@@ -1,18 +1,56 @@
 use anyhow::Result;
 use colored::*;
-use magiclip::DaemonClient;
+use console::{style, Style};
+use dialoguer::theme::ColorfulTheme;
+use dialoguer::Select;
+use magiclip::{ClipboardClient, DaemonClient};
+use zeroconf::ServiceDiscovery;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let client = DaemonClient::new("127.0.0.1", 6061)?;
+    let discovered_services = DaemonClient::new("127.0.0.1", 6061)?
+        .fetch_discovered_services()
+        .await?;
 
-    let discovered_services = client.fetch_discovered_services().await?;
-
-    println!("{:?}", discovered_services);
-
-    for service in discovered_services {
-        println!("{} {}", "▸".cyan(), service.name().cyan());
+    if discovered_services.is_empty() {
+        eprintln("no discovered services");
+        return Ok(());
     }
 
-    loop {}
+    let mut theme = ColorfulTheme::default();
+    theme.active_item_prefix = style("▸".to_string()).cyan();
+    theme.active_item_style = Style::new().cyan().underlined();
+
+    let mut select = Select::with_theme(&theme);
+
+    let items = &discovered_services
+        .iter()
+        .map(|s| s.name())
+        .collect::<Vec<&String>>();
+
+    select.items(&items).default(0);
+
+    let selected_name = items[select.interact()?];
+
+    let service = discovered_services
+        .iter()
+        .find(|s| s.name() == selected_name)
+        .unwrap();
+
+    println!("service = {:?}", service);
+
+    let clipboard = ClipboardClient::new(service.address(), *service.port())?
+        .fetch_clipboard()
+        .await?;
+
+    match clipboard {
+        Some(c) => println!("{}", c),
+        None => eprintln("clipboard is empty"),
+    };
+
+    Ok(())
+}
+
+fn eprintln(message: &str) {
+    eprintln!("{} {}", "error:".bright_red().bold(), message.bold());
 }
