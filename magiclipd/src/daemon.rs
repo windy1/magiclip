@@ -66,7 +66,7 @@ fn on_service_registered(service: ServiceRegistration, context: Option<Arc<dyn A
 
 fn start_browser(context: Box<dyn Any>) {
     let mut browser = MdnsBrowser::new(SERVICE_TYPE);
-    browser.set_resolver_found_callback(Box::new(on_service_discovered));
+    browser.set_service_discovered_callback(Box::new(on_service_discovered));
     browser.set_context(context);
     browser.start().unwrap()
 }

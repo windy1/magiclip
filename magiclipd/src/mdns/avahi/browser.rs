@@ -38,11 +38,11 @@ impl MdnsBrowser {
         }
     }
 
-    pub fn set_resolver_found_callback(
+    pub fn set_service_discovered_callback(
         &mut self,
-        resolver_found_callback: Box<ServiceDiscoveredCallback>,
+        service_discovered_callback: Box<ServiceDiscoveredCallback>,
     ) {
-        unsafe { (*self.context).resolver_found_callback = Some(resolver_found_callback) };
+        unsafe { (*self.context).service_discovered_callback = Some(service_discovered_callback) };
     }
 
     pub fn set_context(&mut self, context: Box<dyn Any>) {
@@ -96,7 +96,7 @@ impl Drop for MdnsBrowser {
 struct AvahiBrowserContext {
     client: Option<ManagedAvahiClient>,
     resolvers: ServiceResolverSet,
-    resolver_found_callback: Option<Box<ServiceDiscoveredCallback>>,
+    service_discovered_callback: Option<Box<ServiceDiscoveredCallback>>,
     user_context: Option<Arc<dyn Any>>,
 }
 
@@ -105,7 +105,7 @@ impl Default for AvahiBrowserContext {
         AvahiBrowserContext {
             client: None,
             resolvers: ServiceResolverSet::default(),
-            resolver_found_callback: None,
+            service_discovered_callback: None,
             user_context: None,
         }
     }
@@ -201,7 +201,7 @@ unsafe extern "C" fn resolve_callback(
 
             debug!("Service resolved: {:?}", result);
 
-            if let Some(f) = &context.resolver_found_callback {
+            if let Some(f) = &context.service_discovered_callback {
                 f(result, context.user_context.clone());
             } else {
                 warn!("Service resolved but no callback was set");
