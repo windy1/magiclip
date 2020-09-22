@@ -1,10 +1,10 @@
 use std::any::Any;
 use std::sync::Arc;
 
-pub type ResolverFoundCallback = dyn Fn(ServiceResolution, Option<Arc<dyn Any>>);
+pub type ServiceDiscoveredCallback = dyn Fn(ServiceDiscovery, Option<Arc<dyn Any>>);
 
 #[derive(Debug, Builder, BuilderDelegate, Getters)]
-pub struct ServiceResolution {
+pub struct ServiceDiscovery {
     name: String,
     kind: String,
     domain: String,

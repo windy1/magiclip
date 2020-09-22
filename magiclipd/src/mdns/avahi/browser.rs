@@ -8,7 +8,7 @@ use crate::mdns::poll::ManagedAvahiSimplePoll;
 use crate::mdns::resolver::{
     ManagedAvahiServiceResolver, ManagedAvahiServiceResolverParams, ServiceResolverSet,
 };
-use crate::mdns::{ResolverFoundCallback, ServiceResolution};
+use crate::mdns::{ServiceDiscoveredCallback, ServiceDiscovery};
 use avahi_sys::{
     AvahiAddress, AvahiBrowserEvent, AvahiClient, AvahiClientFlags, AvahiClientState, AvahiIfIndex,
     AvahiLookupResultFlags, AvahiProtocol, AvahiResolverEvent, AvahiServiceBrowser,
@@ -40,7 +40,7 @@ impl MdnsBrowser {
 
     pub fn set_resolver_found_callback(
         &mut self,
-        resolver_found_callback: Box<ResolverFoundCallback>,
+        resolver_found_callback: Box<ServiceDiscoveredCallback>,
     ) {
         unsafe { (*self.context).resolver_found_callback = Some(resolver_found_callback) };
     }
@@ -96,7 +96,7 @@ impl Drop for MdnsBrowser {
 struct AvahiBrowserContext {
     client: Option<ManagedAvahiClient>,
     resolvers: ServiceResolverSet,
-    resolver_found_callback: Option<Box<ResolverFoundCallback>>,
+    resolver_found_callback: Option<Box<ServiceDiscoveredCallback>>,
     user_context: Option<Arc<dyn Any>>,
 }
 
@@ -189,7 +189,7 @@ unsafe extern "C" fn resolve_callback(
             let host_name = cstr::raw_to_str(host_name);
             let address = address::get_ip(addr);
 
-            let result = ServiceResolution::builder()
+            let result = ServiceDiscovery::builder()
                 .name(name.to_string())
                 .kind(kind.to_string())
                 .domain(domain.to_string())

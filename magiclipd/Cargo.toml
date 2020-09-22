@@ -1,5 +1,5 @@
 [package]
-name = "magiclip"
+name = "magiclipd"
 version = "0.1.0"
 authors = ["Walker Crouse <walker.crouse@coop.co.uk>"]
 edition = "2018"

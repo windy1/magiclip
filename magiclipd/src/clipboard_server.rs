@@ -3,12 +3,12 @@ use std::io;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 
-pub struct MagiclipServer {
+pub struct ClipboardServer {
     host: String,
     port: u16,
 }
 
-impl MagiclipServer {
+impl ClipboardServer {
     pub fn new(host: &str, port: u16) -> Self {
         Self {
             host: host.to_string(),

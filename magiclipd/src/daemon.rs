@@ -1,5 +1,5 @@
-use super::MagiclipServer;
-use crate::mdns::{MdnsBrowser, MdnsService, ServiceRegistration, ServiceResolution};
+use super::ClipboardServer;
+use crate::mdns::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
 use std::io;
 use std::sync::{Arc, Mutex};
 use std::{any::Any, collections::HashMap, thread};
@@ -8,23 +8,23 @@ static SERVICE_TYPE: &'static str = "_magiclip._tcp";
 static PORT: u16 = 6060;
 
 #[derive(Default)]
-pub struct Magiclip {}
+pub struct Daemon {}
 
 #[derive(Default, Debug)]
-struct MagiclipContext {
+struct DaemonContext {
     service_name: String,
-    discovered: HashMap<String, ServiceResolution>,
+    discovered: HashMap<String, ServiceDiscovery>,
 }
 
-impl Magiclip {
+impl Daemon {
     pub async fn start(&mut self) -> Result<(), io::Error> {
         env_logger::init();
         tokio::spawn(start_service(Arc::default()));
-        MagiclipServer::new("0.0.0.0", PORT).start().await
+        ClipboardServer::new("0.0.0.0", PORT).start().await
     }
 }
 
-async fn start_service(context: Arc<Mutex<MagiclipContext>>) {
+async fn start_service(context: Arc<Mutex<DaemonContext>>) {
     let mut service = MdnsService::new(SERVICE_TYPE, PORT);
     service.set_registered_callback(Box::new(on_service_registered));
     service.set_context(Box::new(context));
@@ -37,7 +37,7 @@ fn on_service_registered(service: ServiceRegistration, context: Option<Arc<dyn A
     let context = context
         .as_ref()
         .unwrap()
-        .downcast_ref::<Arc<Mutex<MagiclipContext>>>()
+        .downcast_ref::<Arc<Mutex<DaemonContext>>>()
         .unwrap()
         .clone();
 
@@ -53,10 +53,10 @@ fn start_browser(context: Box<dyn Any>) {
     browser.start().unwrap()
 }
 
-fn on_service_discovered(service: ServiceResolution, context: Option<Arc<dyn Any>>) {
+fn on_service_discovered(service: ServiceDiscovery, context: Option<Arc<dyn Any>>) {
     let context_mtx = context
         .unwrap()
-        .downcast_ref::<Arc<Mutex<MagiclipContext>>>()
+        .downcast_ref::<Arc<Mutex<DaemonContext>>>()
         .unwrap()
         .clone();
 
