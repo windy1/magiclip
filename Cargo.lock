@@ -355,6 +355,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "magiclip"
+version = "0.1.0"
+
+[[package]]
 name = "magiclip-macros"
 version = "0.1.0"
 dependencies = [
