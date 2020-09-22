@@ -1,0 +1,14 @@
+[Unit]
+Description=Magiclip service daemon
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=walker
+ExecStart=/usr/bin/env /home/walker/code/personal/magiclip/target/debug/magiclip
+
+[Install]
+WantedBy=multi-user.target

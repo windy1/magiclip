@@ -60,12 +60,14 @@ fn on_service_discovered(service: ServiceResolution, context: Option<Arc<dyn Any
         .unwrap()
         .clone();
 
-    let context = context_mtx.lock().unwrap();
+    let mut context = context_mtx.lock().unwrap();
 
     if &context.service_name == service.name() {
         debug!("Ignoring {:?}", context.service_name);
         return;
     }
 
-    debug!("Service discovered: {:?}", service);
+    debug!("Service discovered: {:?}", &service);
+
+    context.discovered.insert(service.name().clone(), service);
 }
