@@ -18,11 +18,7 @@ struct MagiclipContext {
 impl Magiclip {
     pub async fn start(&mut self) -> Result<(), io::Error> {
         env_logger::init();
-
-        tokio::spawn(start_service(Arc::new(Mutex::new(
-            MagiclipContext::default(),
-        ))));
-
+        tokio::spawn(start_service(Arc::default()));
         MagiclipServer::new("0.0.0.0", PORT).start().await
     }
 }
@@ -34,7 +30,7 @@ async fn start_service(context: Arc<Mutex<MagiclipContext>>) {
     service.start().unwrap();
 }
 
-fn on_service_registered(service: ServiceRegistration, context: Option<Box<dyn Any>>) {
+fn on_service_registered(service: ServiceRegistration, context: Option<Arc<dyn Any>>) {
     debug!("Service registered: {:?}", service);
 
     let context = context

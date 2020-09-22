@@ -13,6 +13,7 @@ use std::any::Any;
 use std::ffi::CString;
 use std::fmt::{self, Formatter};
 use std::ptr;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct MdnsService {
@@ -35,7 +36,7 @@ impl MdnsService {
     }
 
     pub fn set_context(&mut self, context: Box<dyn Any>) {
-        unsafe { (*self.context).user_context = Some(context) };
+        unsafe { (*self.context).user_context = Some(Arc::from(context)) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -69,7 +70,7 @@ struct AvahiServiceContext {
     port: u16,
     group: Option<ManagedAvahiEntryGroup>,
     registered_callback: Option<Box<ServiceRegisteredCallback>>,
-    user_context: Option<Box<dyn Any>>,
+    user_context: Option<Arc<dyn Any>>,
 }
 
 impl AvahiServiceContext {
@@ -177,7 +178,7 @@ unsafe extern "C" fn entry_group_callback(
                 .expect("could not build ServiceRegistration");
 
             if let Some(f) = &context.registered_callback {
-                f(result, context.user_context.take());
+                f(result, context.user_context.clone());
             } else {
                 warn!("Service registered but no callback was set: {:?}", result);
             }
