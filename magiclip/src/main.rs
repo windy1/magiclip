@@ -1,4 +1,5 @@
 use anyhow::Result;
+use colored::*;
 use magiclip::DaemonClient;
 
 #[tokio::main]
@@ -9,5 +10,9 @@ async fn main() -> Result<()> {
 
     println!("{:?}", discovered_services);
 
-    Ok(())
+    for service in discovered_services {
+        println!("{} {}", "▸".cyan(), service.name().cyan());
+    }
+
+    loop {}
 }
