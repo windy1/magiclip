@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
 
     println!("service = {:?}", service);
 
-    let clipboard = ClipboardClient::new(service.address(), *service.port())?
+    let clipboard = ClipboardClient::new(service.address(), 6060)?
         .fetch_clipboard()
         .await?;
 
