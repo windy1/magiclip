@@ -1,4 +1,4 @@
-use crate::mdns::client::ManagedAvahiClient;
+use crate::client::ManagedAvahiClient;
 use avahi_sys::{
     avahi_service_browser_free, avahi_service_browser_new, AvahiIfIndex, AvahiLookupFlags,
     AvahiProtocol, AvahiServiceBrowser, AvahiServiceBrowserCallback,

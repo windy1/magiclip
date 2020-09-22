@@ -1,14 +1,14 @@
 use super::address;
 use super::raw_browser::{ManagedAvahiServiceBrowser, ManagedAvahiServiceBrowserParams};
 use crate::builder::BuilderDelegate;
+use crate::client::{ManagedAvahiClient, ManagedAvahiClientParams};
+use crate::constants;
 use crate::ffi::{cstr, FromRaw};
-use crate::mdns::client::{ManagedAvahiClient, ManagedAvahiClientParams};
-use crate::mdns::constants;
-use crate::mdns::poll::ManagedAvahiSimplePoll;
-use crate::mdns::resolver::{
+use crate::poll::ManagedAvahiSimplePoll;
+use crate::resolver::{
     ManagedAvahiServiceResolver, ManagedAvahiServiceResolverParams, ServiceResolverSet,
 };
-use crate::mdns::{ServiceDiscoveredCallback, ServiceDiscovery};
+use crate::{ServiceDiscoveredCallback, ServiceDiscovery};
 use avahi_sys::{
     AvahiAddress, AvahiBrowserEvent, AvahiClient, AvahiClientFlags, AvahiClientState, AvahiIfIndex,
     AvahiLookupResultFlags, AvahiProtocol, AvahiResolverEvent, AvahiServiceBrowser,

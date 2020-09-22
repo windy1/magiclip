@@ -2,7 +2,7 @@ use super::compat;
 use super::service_ref::{ManagedDNSServiceRef, RegisterServiceParams};
 use crate::builder::BuilderDelegate;
 use crate::ffi::{cstr, FromRaw};
-use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
+use crate::{ServiceRegisteredCallback, ServiceRegistration};
 use bonjour_sys::{DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_void};
 use std::any::Any;

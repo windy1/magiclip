@@ -4,7 +4,7 @@ use super::entry_group::{AddServiceParams, ManagedAvahiEntryGroup, ManagedAvahiE
 use super::poll::ManagedAvahiSimplePoll;
 use crate::builder::BuilderDelegate;
 use crate::ffi::{cstr, AsRaw, FromRaw};
-use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
+use crate::{ServiceRegisteredCallback, ServiceRegistration};
 use avahi_sys::{
     AvahiClient, AvahiClientFlags, AvahiClientState, AvahiEntryGroup, AvahiEntryGroupState,
 };

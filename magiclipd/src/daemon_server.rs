@@ -1,9 +1,9 @@
 use super::DaemonContext;
-use crate::mdns::ServiceDiscovery;
 use std::io;
 use std::sync::{Arc, Mutex};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
+use zeroconf::ServiceDiscovery;
 
 #[derive(new)]
 pub struct DaemonServer {

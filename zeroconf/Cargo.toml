@@ -1,0 +1,21 @@
+[package]
+name = "zeroconf"
+version = "0.1.0"
+authors = ["Walker Crouse <walker.crouse@coop.co.uk>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0.116", features = ["derive"] }
+derive-getters = "0.2.0"
+libc = "*"
+derive_builder = "0.9.0"
+magiclip-macros = { path = "../magiclip-macros" }
+log = "0.4.11"
+
+[target.'cfg(unix)'.dependencies]
+avahi-sys = { path = "../../avahi-sys" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+bonjour-sys = { path = "../../bonjour-sys" }

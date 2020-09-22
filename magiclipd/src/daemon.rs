@@ -1,8 +1,8 @@
 use super::{ClipboardServer, DaemonServer};
-use crate::mdns::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
 use std::io;
 use std::sync::{Arc, Mutex};
 use std::{any::Any, collections::HashMap, thread};
+use zeroconf::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
 
 static SERVICE_TYPE: &'static str = "_magiclip._tcp";
 static CLIPBOARD_HOST: &'static str = "0.0.0.0";

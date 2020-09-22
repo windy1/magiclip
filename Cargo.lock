@@ -387,20 +387,16 @@ dependencies = [
 name = "magiclipd"
 version = "0.1.0"
 dependencies = [
- "avahi-sys",
- "bonjour-sys",
  "clipboard",
  "derive-getters",
  "derive-new",
- "derive_builder",
  "env_logger",
- "libc",
  "log",
- "magiclip-macros",
  "pre-commit",
  "serde",
  "serde_json",
  "tokio",
+ "zeroconf",
 ]
 
 [[package]]
@@ -892,4 +888,18 @@ checksum = "5e917a3f24142e9ff8be2414e36c649d47d6cc2ba81f16201cdef96e533e02de"
 dependencies = [
  "libc",
  "log",
+]
+
+[[package]]
+name = "zeroconf"
+version = "0.1.0"
+dependencies = [
+ "avahi-sys",
+ "bonjour-sys",
+ "derive-getters",
+ "derive_builder",
+ "libc",
+ "log",
+ "magiclip-macros",
+ "serde",
 ]
