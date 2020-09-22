@@ -1,5 +1,5 @@
 [package]
-name = "magiclip-macros"
+name = "zeroconf-macros"
 version = "0.1.0"
 authors = ["Walker Crouse <Walker.Crouse@hotmail.com>"]
 edition = "2018"

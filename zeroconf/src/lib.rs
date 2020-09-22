@@ -3,7 +3,7 @@ extern crate serde;
 #[macro_use]
 extern crate derive_builder;
 #[macro_use]
-extern crate magiclip_macros;
+extern crate zeroconf_macros;
 #[cfg(target_os = "linux")]
 extern crate avahi_sys;
 #[cfg(target_os = "macos")]

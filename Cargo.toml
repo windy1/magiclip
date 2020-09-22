@@ -2,6 +2,6 @@
 members = [
     "magiclip",
     "magiclipd",
-    "magiclip-macros",
     "zeroconf",
+    "zeroconf-macros",
 ]
