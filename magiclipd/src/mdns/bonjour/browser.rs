@@ -29,11 +29,11 @@ impl MdnsBrowser {
         }
     }
 
-    pub fn set_resolver_found_callback(
+    pub fn set_service_discovered_callback(
         &self,
-        resolver_found_callback: Box<ServiceDiscoveredCallback>,
+        service_discovered_callback: Box<ServiceDiscoveredCallback>,
     ) {
-        unsafe { (*self.context).resolver_found_callback = Some(resolver_found_callback) };
+        unsafe { (*self.context).service_discovered_callback = Some(service_discovered_callback) };
     }
 
     pub fn set_context(&mut self, context: Box<dyn Any>) {
@@ -64,7 +64,7 @@ impl Drop for MdnsBrowser {
 
 #[derive(Default, FromRaw)]
 struct BonjourBrowserContext {
-    resolver_found_callback: Option<Box<ServiceDiscoveredCallback>>,
+    service_discovered_callback: Option<Box<ServiceDiscoveredCallback>>,
     resolved_name: Option<String>,
     resolved_kind: Option<String>,
     resolved_domain: Option<String>,
@@ -192,7 +192,7 @@ unsafe extern "C" fn get_address_info_callback(
         .build()
         .expect("could not build ServiceResolution");
 
-    if let Some(f) = &ctx.resolver_found_callback {
+    if let Some(f) = &ctx.service_discovered_callback {
         f(result, ctx.user_context.clone());
     }
 }
