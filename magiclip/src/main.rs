@@ -4,7 +4,6 @@ use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 use magiclip::{ClipboardClient, DaemonClient};
-use zeroconf::ServiceDiscovery;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -36,8 +35,6 @@ async fn main() -> Result<()> {
         .iter()
         .find(|s| s.name() == selected_name)
         .unwrap();
-
-    println!("service = {:?}", service);
 
     let clipboard = ClipboardClient::new(service.address(), 6060)?
         .fetch_clipboard()

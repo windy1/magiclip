@@ -80,10 +80,10 @@ fn on_service_discovered(service: ServiceDiscovery, context: Option<Arc<dyn Any>
 
     let mut context = context_mtx.lock().unwrap();
 
-    // if &context.service_name == service.name() {
-    //     debug!("Ignoring {:?}", context.service_name);
-    //     return;
-    // }
+    if &context.service_name == service.name() {
+        debug!("Ignoring {:?}", context.service_name);
+        return;
+    }
 
     debug!("Service discovered: {:?}", &service);
 
