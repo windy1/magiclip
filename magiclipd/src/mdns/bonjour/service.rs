@@ -5,8 +5,10 @@ use crate::ffi::{cstr, FromRaw};
 use crate::mdns::{ServiceRegisteredCallback, ServiceRegistration};
 use bonjour_sys::{DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_void};
+use std::any::Any;
 use std::ffi::CString;
 use std::ptr;
+use std::sync::Arc;
 
 const BONJOUR_IF_UNSPEC: u32 = 0;
 const BONJOUR_RENAME_FLAGS: DNSServiceFlags = 0;
@@ -31,6 +33,10 @@ impl MdnsService {
 
     pub fn set_registered_callback(&mut self, registered_callback: Box<ServiceRegisteredCallback>) {
         unsafe { (*self.context).registered_callback = Some(registered_callback) };
+    }
+
+    pub fn set_context(&mut self, context: Box<dyn Any>) {
+        unsafe { (*self.context).user_context = Some(Arc::from(context)) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -63,6 +69,7 @@ impl Drop for MdnsService {
 #[derive(Default, FromRaw)]
 pub struct BonjourServiceContext {
     registered_callback: Option<Box<ServiceRegisteredCallback>>,
+    user_context: Option<Arc<dyn Any>>,
 }
 
 unsafe extern "C" fn register_callback(
@@ -90,7 +97,7 @@ unsafe extern "C" fn register_callback(
     let context = BonjourServiceContext::from_raw(context);
 
     if let Some(f) = &mut context.registered_callback {
-        f(result);
+        f(result, context.user_context.clone());
     } else {
         warn!("Service registered but no callback has been set");
     }

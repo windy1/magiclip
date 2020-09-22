@@ -4,12 +4,14 @@ use super::service_ref::{
 };
 use crate::builder::BuilderDelegate;
 use crate::ffi::{cstr, FromRaw};
-use crate::mdns::{ResolverFoundCallback, ServiceResolution};
+use crate::mdns::{ServiceDiscoveredCallback, ServiceDiscovery};
 use bonjour_sys::{sockaddr, DNSServiceErrorType, DNSServiceFlags, DNSServiceRef};
 use libc::{c_char, c_uchar, c_void, in_addr, sockaddr_in};
+use std::any::Any;
 use std::ffi::CString;
 use std::fmt::{self, Formatter};
 use std::ptr;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct MdnsBrowser {
@@ -29,9 +31,13 @@ impl MdnsBrowser {
 
     pub fn set_resolver_found_callback(
         &self,
-        resolver_found_callback: Box<dyn Fn(ServiceResolution)>,
+        resolver_found_callback: Box<ServiceDiscoveredCallback>,
     ) {
         unsafe { (*self.context).resolver_found_callback = Some(resolver_found_callback) };
+    }
+
+    pub fn set_context(&mut self, context: Box<dyn Any>) {
+        unsafe { (*self.context).user_context = Some(Arc::from(context)) };
     }
 
     pub fn start(&mut self) -> Result<(), String> {
@@ -58,11 +64,12 @@ impl Drop for MdnsBrowser {
 
 #[derive(Default, FromRaw)]
 struct BonjourBrowserContext {
-    resolver_found_callback: Option<Box<ResolverFoundCallback>>,
+    resolver_found_callback: Option<Box<ServiceDiscoveredCallback>>,
     resolved_name: Option<String>,
     resolved_kind: Option<String>,
     resolved_domain: Option<String>,
     resolved_port: u16,
+    user_context: Option<Arc<dyn Any>>,
 }
 
 impl fmt::Debug for BonjourBrowserContext {
@@ -175,7 +182,7 @@ unsafe extern "C" fn get_address_info_callback(
     let hostname = cstr::copy_raw(hostname);
     let domain = compat::normalize_domain(&ctx.resolved_domain.take().unwrap());
 
-    let result = ServiceResolution::builder()
+    let result = ServiceDiscovery::builder()
         .name(ctx.resolved_name.take().unwrap())
         .kind(ctx.resolved_kind.take().unwrap())
         .domain(domain)
@@ -186,7 +193,7 @@ unsafe extern "C" fn get_address_info_callback(
         .expect("could not build ServiceResolution");
 
     if let Some(f) = &ctx.resolver_found_callback {
-        f(result);
+        f(result, ctx.user_context.clone());
     }
 }
 
