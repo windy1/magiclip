@@ -81,9 +81,6 @@ impl ServiceResolverSet {
     }
 
     pub fn remove_raw(&mut self, raw: *mut AvahiServiceResolver) {
-        debug!("removing {:?}", raw);
-        if let Some(r) = self.resolvers.remove(&raw) {
-            debug!("removed {:?}", r);
-        }
+        self.resolvers.remove(&raw);
     }
 }

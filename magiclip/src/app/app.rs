@@ -2,7 +2,7 @@ use super::MagiclipServer;
 use crate::mdns::{MdnsBrowser, MdnsService, ServiceRegistration, ServiceResolution};
 use std::io;
 use std::sync::{Arc, Mutex};
-use std::{any::Any, thread};
+use std::{any::Any, collections::HashMap, thread};
 
 static SERVICE_TYPE: &'static str = "_magiclip._tcp";
 static PORT: u16 = 6060;
@@ -13,6 +13,7 @@ pub struct Magiclip {}
 #[derive(Default, Debug)]
 struct MagiclipContext {
     service_name: String,
+    discovered: HashMap<String, ServiceResolution>,
 }
 
 impl Magiclip {
@@ -41,8 +42,6 @@ fn on_service_registered(service: ServiceRegistration, context: Option<Arc<dyn A
         .clone();
 
     context.lock().unwrap().service_name = service.name().clone();
-
-    debug!("\tcontext = {:?}", context);
 
     thread::spawn(move || start_browser(Box::new(context)));
 }
