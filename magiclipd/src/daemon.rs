@@ -1,17 +1,22 @@
-use super::ClipboardServer;
+use super::{ClipboardServer, DaemonServer};
 use crate::mdns::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
 use std::io;
 use std::sync::{Arc, Mutex};
 use std::{any::Any, collections::HashMap, thread};
 
 static SERVICE_TYPE: &'static str = "_magiclip._tcp";
-static PORT: u16 = 6060;
+static CLIPBOARD_HOST: &'static str = "0.0.0.0";
+static CLIPBOARD_PORT: u16 = 6060;
+static DAEMON_HOST: &'static str = "127.0.0.1";
+static DAEMON_PORT: u16 = 6061;
 
 #[derive(Default)]
-pub struct Daemon {}
+pub struct Daemon {
+    context: Arc<Mutex<DaemonContext>>,
+}
 
-#[derive(Default, Debug)]
-struct DaemonContext {
+#[derive(Default, Debug, Getters)]
+pub struct DaemonContext {
     service_name: String,
     discovered: HashMap<String, ServiceDiscovery>,
 }
@@ -19,13 +24,26 @@ struct DaemonContext {
 impl Daemon {
     pub async fn start(&mut self) -> Result<(), io::Error> {
         env_logger::init();
-        tokio::spawn(start_service(Arc::default()));
-        ClipboardServer::new("0.0.0.0", PORT).start().await
+
+        self.context = Arc::default();
+        let context = self.context.clone();
+
+        tokio::spawn(async { start_service(context).await });
+
+        tokio::spawn(async {
+            ClipboardServer::new(CLIPBOARD_HOST.to_string(), CLIPBOARD_PORT)
+                .start()
+                .await
+        });
+
+        DaemonServer::new(DAEMON_HOST.to_string(), DAEMON_PORT, self.context.clone())
+            .start()
+            .await
     }
 }
 
 async fn start_service(context: Arc<Mutex<DaemonContext>>) {
-    let mut service = MdnsService::new(SERVICE_TYPE, PORT);
+    let mut service = MdnsService::new(SERVICE_TYPE, CLIPBOARD_PORT);
     service.set_registered_callback(Box::new(on_service_registered));
     service.set_context(Box::new(context));
     service.start().unwrap();
@@ -43,7 +61,7 @@ fn on_service_registered(service: ServiceRegistration, context: Option<Arc<dyn A
 
     context.lock().unwrap().service_name = service.name().clone();
 
-    thread::spawn(move || start_browser(Box::new(context)));
+    thread::spawn(|| start_browser(Box::new(context)));
 }
 
 fn start_browser(context: Box<dyn Any>) {

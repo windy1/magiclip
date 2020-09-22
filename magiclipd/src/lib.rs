@@ -1,4 +1,8 @@
 #[macro_use]
+extern crate serde;
+#[macro_use]
+extern crate derive_new;
+#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate derive_builder;
@@ -16,6 +20,7 @@ extern crate tokio;
 
 mod clipboard_server;
 mod daemon;
+mod daemon_server;
 
 pub mod builder;
 pub mod ffi;
@@ -23,3 +28,4 @@ pub mod mdns;
 
 pub use clipboard_server::*;
 pub use daemon::*;
+pub use daemon_server::*;

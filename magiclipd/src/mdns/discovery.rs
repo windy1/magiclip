@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 pub type ServiceDiscoveredCallback = dyn Fn(ServiceDiscovery, Option<Arc<dyn Any>>);
 
-#[derive(Debug, Builder, BuilderDelegate, Getters)]
+#[derive(Debug, Builder, BuilderDelegate, Getters, Serialize)]
 pub struct ServiceDiscovery {
     name: String,
     kind: String,
