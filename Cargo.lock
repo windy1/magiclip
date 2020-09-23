@@ -1065,9 +1065,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "zeroconf-browser-example"
+version = "0.1.0"
+dependencies = [
+ "zeroconf",
+]
+
+[[package]]
 name = "zeroconf-macros"
 version = "0.1.0"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "zeroconf-service-example"
+version = "0.1.0"
+dependencies = [
+ "zeroconf",
 ]

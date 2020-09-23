@@ -4,4 +4,6 @@ members = [
     "magiclipd",
     "zeroconf",
     "zeroconf-macros",
+    "zeroconf-service-example",
+    "zeroconf-browser-example",
 ]
