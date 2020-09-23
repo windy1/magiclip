@@ -14,6 +14,8 @@ pub struct DaemonServer {
 
 impl DaemonServer {
     pub async fn start(&mut self) -> io::Result<()> {
+        debug!("Starting daemon server on: {}:{}", self.host, self.port);
+
         let mut listener = TcpListener::bind(format!("{}:{}", self.host, self.port)).await?;
 
         loop {

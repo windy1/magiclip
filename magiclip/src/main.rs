@@ -1,4 +1,5 @@
 use anyhow::Result;
+use clipboard::{ClipboardContext, ClipboardProvider};
 use colored::*;
 use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
@@ -36,12 +37,16 @@ async fn main() -> Result<()> {
         .find(|s| s.name() == selected_name)
         .unwrap();
 
-    let clipboard = ClipboardClient::new(service.address(), 6060)?
+    let contents = ClipboardClient::new(service.address(), 6060)?
         .fetch_clipboard()
         .await?;
 
-    match clipboard {
-        Some(c) => println!("{}", c),
+    match contents {
+        Some(c) => {
+            let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
+            clipboard.set_contents(c.clone()).unwrap();
+            println!("{} {}", "Copied to clipboard:".green(), c.bold());
+        }
         None => eprintln("clipboard is empty"),
     };
 
