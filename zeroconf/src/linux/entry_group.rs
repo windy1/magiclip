@@ -1,4 +1,4 @@
-use super::err;
+use super::avahi_util;
 use avahi_sys::{
     avahi_entry_group_add_service, avahi_entry_group_commit, avahi_entry_group_free,
     avahi_entry_group_is_empty, avahi_entry_group_new, avahi_entry_group_reset, AvahiClient,
@@ -63,7 +63,7 @@ impl ManagedAvahiEntryGroup {
         if err < 0 {
             return Err(format!(
                 "could not register service: `{}`",
-                err::get_error(err)
+                avahi_util::get_error(err)
             ));
         }
 
@@ -72,7 +72,7 @@ impl ManagedAvahiEntryGroup {
         if err < 0 {
             Err(format!(
                 "could not commit service: `{}`",
-                err::get_error(err)
+                avahi_util::get_error(err)
             ))
         } else {
             Ok(())

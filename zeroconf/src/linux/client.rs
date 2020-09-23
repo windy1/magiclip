@@ -1,4 +1,4 @@
-use super::err;
+use super::avahi_util;
 use super::poll::ManagedAvahiSimplePoll;
 use crate::ffi::cstr;
 use avahi_sys::{
@@ -42,7 +42,7 @@ impl ManagedAvahiClient {
             0 => Ok(Self { client }),
             _ => Err(format!(
                 "could not initialize AvahiClient: {}",
-                err::get_error(err)
+                avahi_util::get_error(err)
             )),
         }
     }
