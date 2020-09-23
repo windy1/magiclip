@@ -4,7 +4,6 @@ use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 use magiclip::{ClipboardClient, DaemonClient};
-use zeroconf::ServiceDiscovery;
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -67,7 +67,7 @@ impl Drop for MdnsService {
 }
 
 #[derive(Default, FromRaw)]
-pub struct BonjourServiceContext {
+struct BonjourServiceContext {
     registered_callback: Option<Box<ServiceRegisteredCallback>>,
     user_context: Option<Arc<dyn Any>>,
 }

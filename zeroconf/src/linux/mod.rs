@@ -1,5 +1,5 @@
-mod browser;
-mod service;
+pub(crate) mod browser;
+pub(crate) mod service;
 
 pub mod address;
 pub mod client;

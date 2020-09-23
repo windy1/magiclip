@@ -15,14 +15,20 @@ extern crate log;
 extern crate libc;
 
 mod discovery;
-#[cfg_attr(target_os = "linux", path = "avahi/mod.rs")]
-#[cfg_attr(target_os = "macos", path = "bonjour/mod.rs")]
-mod os;
 mod registration;
 
 pub mod builder;
 pub mod ffi;
 
+#[cfg(target_os = "linux")]
+pub mod linux;
+#[cfg(target_os = "macos")]
+pub mod macos;
+
 pub use discovery::*;
-pub use os::*;
 pub use registration::*;
+
+#[cfg(target_os = "linux")]
+pub use linux::{browser::*, service::*};
+#[cfg(target_os = "macos")]
+pub use macos::{browser::*, service::*};
