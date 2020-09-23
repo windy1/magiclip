@@ -1,4 +1,4 @@
-use super::address;
+use super::avahi_util;
 use super::client::{ManagedAvahiClient, ManagedAvahiClientParams};
 use super::constants;
 use super::poll::ManagedAvahiSimplePoll;
@@ -187,7 +187,7 @@ unsafe extern "C" fn resolve_callback(
         ),
         avahi_sys::AvahiResolverEvent_AVAHI_RESOLVER_FOUND => {
             let host_name = cstr::raw_to_str(host_name);
-            let address = address::get_ip(addr);
+            let address = avahi_util::avahi_address_to_string(addr);
 
             let result = ServiceDiscovery::builder()
                 .name(name.to_string())

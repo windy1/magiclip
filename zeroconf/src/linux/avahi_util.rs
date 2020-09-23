@@ -4,7 +4,7 @@ use libc::c_char;
 use std::ffi::CString;
 use std::mem;
 
-pub unsafe fn get_ip(addr: *const AvahiAddress) -> String {
+pub unsafe fn avahi_address_to_string(addr: *const AvahiAddress) -> String {
     let addr_str = CString::from_vec_unchecked(vec![0; constants::AVAHI_ADDRESS_STR_MAX]);
 
     avahi_address_snprint(
