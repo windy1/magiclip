@@ -36,9 +36,7 @@ async fn main() -> Result<()> {
         .find(|s| s.name() == selected_name)
         .unwrap();
 
-    println!("service = {:?}", service);
-
-    let clipboard = ClipboardClient::new(service.address(), *service.port())?
+    let clipboard = ClipboardClient::new(service.address(), 6060)?
         .fetch_clipboard()
         .await?;
 
