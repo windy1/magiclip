@@ -4,6 +4,8 @@ extern crate derive_new;
 extern crate log;
 #[macro_use]
 extern crate derive_getters;
+#[macro_use]
+extern crate anyhow;
 extern crate clipboard;
 extern crate tokio;
 

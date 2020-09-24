@@ -438,11 +438,10 @@ name = "magiclip"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clipboard",
  "colored",
  "console",
- "derive-new",
  "dialoguer",
+ "magiclip-dtos",
  "serde",
  "serde_json",
  "tokio",
@@ -450,14 +449,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "magiclip-dtos"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "magiclipd"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clipboard",
  "derive-getters",
  "derive-new",
  "env_logger",
  "log",
+ "magiclip-dtos",
  "pre-commit",
  "serde",
  "serde_json",

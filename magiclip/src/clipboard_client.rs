@@ -1,3 +1,4 @@
+use super::net;
 use anyhow::{Context, Result};
 use std::net::SocketAddr;
 use std::str;
@@ -26,9 +27,8 @@ impl ClipboardClient {
             Ok(None)
         } else {
             Ok(Some(
-                str::from_utf8(&buffer)
-                    .context("could not decode payload")?
-                    .trim_matches(char::from(0))
+                net::decode_buffer(&buffer)
+                    .context("could not decode clipboard contents")?
                     .to_string(),
             ))
         }

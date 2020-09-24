@@ -1,9 +1,9 @@
 extern crate tokio;
 
+use anyhow::Result;
 use magiclipd::Daemon;
-use std::io;
 
 #[tokio::main]
-async fn main() -> Result<(), io::Error> {
+async fn main() -> Result<()> {
     Daemon::default().start().await
 }

@@ -1,5 +1,5 @@
 use super::{ClipboardServer, DaemonServer};
-use std::io;
+use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use std::{any::Any, collections::HashMap, thread};
 use zeroconf::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
@@ -22,7 +22,7 @@ pub struct DaemonContext {
 }
 
 impl Daemon {
-    pub async fn start(&mut self) -> Result<(), io::Error> {
+    pub async fn start(&mut self) -> Result<()> {
         env_logger::init();
 
         self.context = Arc::default();
