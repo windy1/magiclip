@@ -2,6 +2,7 @@
 members = [
     "magiclip",
     "magiclipd",
+    "magiclip-dtos",
     "zeroconf",
     "zeroconf-macros",
     "zeroconf-service-example",

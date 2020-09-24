@@ -1,16 +1,18 @@
-use anyhow::Result;
-use clipboard::{ClipboardContext, ClipboardProvider};
+use anyhow::{Context, Result};
 use colored::*;
 use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 use magiclip::{ClipboardClient, DaemonClient};
 
+static DAEMON_HOST: &'static str = "127.0.0.1";
+static DAEMON_PORT: u16 = 6061;
+static CLIPBOARD_PORT: u16 = 6060;
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    let discovered_services = DaemonClient::new("127.0.0.1", 6061)?
-        .fetch_discovered_services()
-        .await?;
+    let daemon = DaemonClient::new(DAEMON_HOST, DAEMON_PORT)?;
+    let discovered_services = daemon.list_discovered_services().await?;
 
     if discovered_services.is_empty() {
         eprintln("no discovered services");
@@ -37,14 +39,17 @@ async fn main() -> Result<()> {
         .find(|s| s.name() == selected_name)
         .unwrap();
 
-    let contents = ClipboardClient::new(service.address(), 6060)?
+    let contents = ClipboardClient::new(service.address(), CLIPBOARD_PORT)?
         .fetch_clipboard()
         .await?;
 
     match contents {
         Some(c) => {
-            let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
-            clipboard.set_contents(c.clone()).unwrap();
+            daemon
+                .set_clipboard(&c)
+                .await
+                .context("could not push clipboard to daemon")?;
+
             println!("{} {}", "Copied to clipboard:".green(), c.bold());
         }
         None => eprintln("clipboard is empty"),
