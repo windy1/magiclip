@@ -22,7 +22,7 @@ impl ClipboardServer {
 
             tokio::spawn(async move {
                 let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
-                let contents: String = clipboard.get_contents().unwrap();
+                let contents = clipboard.get_contents().unwrap_or_else(|_| String::new());
                 socket.write(contents.as_bytes()).await
             });
         }
