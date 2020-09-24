@@ -19,10 +19,7 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    let mut theme = ColorfulTheme::default();
-    theme.active_item_prefix = style("▸".to_string()).cyan();
-    theme.active_item_style = Style::new().cyan().underlined();
-
+    let theme = create_select_theme();
     let mut select = Select::with_theme(&theme);
 
     let items = &discovered_services
@@ -60,4 +57,11 @@ async fn main() -> Result<()> {
 
 fn eprintln(message: &str) {
     eprintln!("{} {}", "error:".bright_red().bold(), message.bold());
+}
+
+fn create_select_theme() -> ColorfulTheme {
+    let mut theme = ColorfulTheme::default();
+    theme.active_item_prefix = style("▸".to_string()).cyan();
+    theme.active_item_style = Style::new().cyan().underlined();
+    theme
 }
