@@ -1,5 +1,5 @@
+use anyhow::Result;
 use clipboard::{ClipboardContext, ClipboardProvider};
-use std::io;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 
@@ -10,7 +10,7 @@ pub struct ClipboardServer {
 }
 
 impl ClipboardServer {
-    pub async fn start(&mut self) -> io::Result<()> {
+    pub async fn start(&mut self) -> Result<()> {
         debug!("Starting clipboard server on: {}:{}", self.host, self.port);
 
         let mut listener = TcpListener::bind(format!("{}:{}", self.host, self.port)).await?;
