@@ -115,6 +115,10 @@ pub use discovery::*;
 pub use registration::*;
 
 #[cfg(target_os = "linux")]
-pub use linux::{browser::*, service::*};
+pub type MdnsBrowser = linux::browser::AvahiMdnsBrowser;
+#[cfg(target_os = "linux")]
+pub type MdnsService = linux::service::AvahiMdnsService;
 #[cfg(target_os = "macos")]
-pub use macos::{browser::*, service::*};
+pub type MdnsBrowser = macos::browser::BonjourMdnsBrowser;
+#[cfg(target_os = "macos")]
+pub type MdnsService = macos::service::BonjourMdnsService;

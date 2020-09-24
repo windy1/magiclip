@@ -16,13 +16,13 @@ use std::ptr;
 use std::sync::Arc;
 
 #[derive(Debug)]
-pub struct MdnsService {
+pub struct AvahiMdnsService {
     client: Option<ManagedAvahiClient>,
     poll: Option<ManagedAvahiSimplePoll>,
     context: *mut AvahiServiceContext,
 }
 
-impl MdnsService {
+impl AvahiMdnsService {
     pub fn new(kind: &str, port: u16) -> Self {
         Self {
             client: None,
@@ -57,7 +57,7 @@ impl MdnsService {
     }
 }
 
-impl Drop for MdnsService {
+impl Drop for AvahiMdnsService {
     fn drop(&mut self) {
         unsafe { Box::from_raw(self.context) };
     }

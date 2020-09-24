@@ -14,14 +14,14 @@ const BONJOUR_IF_UNSPEC: u32 = 0;
 const BONJOUR_RENAME_FLAGS: DNSServiceFlags = 0;
 
 #[derive(Debug)]
-pub struct MdnsService {
+pub struct BonjourMdnsService {
     service: ManagedDNSServiceRef,
     kind: CString,
     port: u16,
     context: *mut BonjourServiceContext,
 }
 
-impl MdnsService {
+impl BonjourMdnsService {
     pub fn new(kind: &str, port: u16) -> Self {
         Self {
             service: ManagedDNSServiceRef::default(),
@@ -60,7 +60,7 @@ impl MdnsService {
     }
 }
 
-impl Drop for MdnsService {
+impl Drop for BonjourMdnsService {
     fn drop(&mut self) {
         unsafe { Box::from_raw(self.context) };
     }

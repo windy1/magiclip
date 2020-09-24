@@ -21,14 +21,14 @@ use std::sync::Arc;
 use std::{fmt, ptr};
 
 #[derive(Debug)]
-pub struct MdnsBrowser {
+pub struct AvahiMdnsBrowser {
     poll: Option<ManagedAvahiSimplePoll>,
     browser: Option<ManagedAvahiServiceBrowser>,
     kind: CString,
     context: *mut AvahiBrowserContext,
 }
 
-impl MdnsBrowser {
+impl AvahiMdnsBrowser {
     pub fn new(kind: &str) -> Self {
         Self {
             poll: None,
@@ -84,7 +84,7 @@ impl MdnsBrowser {
     }
 }
 
-impl Drop for MdnsBrowser {
+impl Drop for AvahiMdnsBrowser {
     fn drop(&mut self) {
         unsafe {
             Box::from_raw(self.context);

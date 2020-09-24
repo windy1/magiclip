@@ -14,13 +14,13 @@ use std::ptr;
 use std::sync::Arc;
 
 #[derive(Debug)]
-pub struct MdnsBrowser {
+pub struct BonjourMdnsBrowser {
     service: ManagedDNSServiceRef,
     kind: CString,
     context: *mut BonjourBrowserContext,
 }
 
-impl MdnsBrowser {
+impl BonjourMdnsBrowser {
     pub fn new(kind: &str) -> Self {
         Self {
             service: ManagedDNSServiceRef::default(),
@@ -56,7 +56,7 @@ impl MdnsBrowser {
     }
 }
 
-impl Drop for MdnsBrowser {
+impl Drop for BonjourMdnsBrowser {
     fn drop(&mut self) {
         unsafe { Box::from_raw(self.context) };
     }
