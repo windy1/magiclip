@@ -1,5 +1,5 @@
-use super::net;
 use anyhow::{Context, Result};
+use magiclip_dtos::net;
 use magiclip_dtos::DaemonPayload;
 use std::net::SocketAddr;
 use std::str;

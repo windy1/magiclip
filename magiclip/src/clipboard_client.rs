@@ -1,5 +1,5 @@
-use super::net;
 use anyhow::{Context, Result};
+use magiclip_dtos::net;
 use std::net::SocketAddr;
 use std::str;
 use tokio::io::AsyncReadExt;

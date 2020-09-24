@@ -1,7 +1,7 @@
 use super::DaemonContext;
 use anyhow::{Context, Result};
 use clipboard::{ClipboardContext, ClipboardProvider};
-use magiclip_dtos::DaemonPayload;
+use magiclip_dtos::{net, DaemonPayload};
 use std::str;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -17,9 +17,13 @@ pub struct DaemonServer {
 
 impl DaemonServer {
     pub async fn start(&mut self) -> Result<()> {
-        debug!("Starting daemon server on: {}:{}", self.host, self.port);
+        let addr = format!("{}:{}", self.host, self.port);
 
-        let mut listener = TcpListener::bind(format!("{}:{}", self.host, self.port)).await?;
+        debug!("Starting daemon server on: {}", addr);
+
+        let mut listener = TcpListener::bind(&addr)
+            .await
+            .context(format!("could bind DaemonServer to: `{}`", addr))?;
 
         loop {
             let (socket, addr) = listener.accept().await?;
@@ -35,16 +39,18 @@ impl DaemonServer {
 async fn handle_conn(mut socket: TcpStream, context: Arc<Mutex<DaemonContext>>) -> Result<()> {
     let mut buffer = [0; 1024];
 
-    if socket.read(&mut buffer).await.unwrap() == 0 {
+    let len = socket
+        .read(&mut buffer)
+        .await
+        .context("could not read from socket")?;
+
+    if len == 0 {
         return Err(anyhow!("no payload specified to DaemonServer"));
     }
 
-    let payload: DaemonPayload = serde_json::from_str(
-        str::from_utf8(&buffer)
-            .context("could not decode payload")?
-            .trim_matches(char::from(0)),
-    )
-    .context("invalid payload")?;
+    let payload: DaemonPayload =
+        serde_json::from_str(net::decode_buffer(&buffer).context("could not decode payload")?)
+            .context("invalid payload")?;
 
     debug!("Payload: {:?}", payload);
 
