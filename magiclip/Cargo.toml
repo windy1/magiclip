@@ -12,5 +12,5 @@ anyhow = "1.0.32"
 colored = "2.0.0"
 dialoguer = "0.6.2"
 console = "0.11.2"
-zeroconf = "0.1.0-beta"
+zeroconf = { path = "../../zeroconf-rs/zeroconf", version = "0.1.0-beta"}
 magiclip-dtos = { path = "../magiclip-dtos" }

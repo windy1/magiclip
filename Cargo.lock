@@ -1041,12 +1041,11 @@ dependencies = [
 [[package]]
 name = "zeroconf"
 version = "0.1.0-beta"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "584ba4ba2e7ad0674da8ad310099f9158cc759b85588a157c40e0bc492e9c26b"
 dependencies = [
  "avahi-sys",
  "bonjour-sys",
  "derive-getters",
+ "derive-new",
  "derive_builder",
  "libc",
  "log",
@@ -1057,8 +1056,6 @@ dependencies = [
 [[package]]
 name = "zeroconf-macros"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb0df536fc31d62bae298ba3ac1cc358733c2cfbfc369577d8ae51894424d23d"
 dependencies = [
  "quote",
  "syn",

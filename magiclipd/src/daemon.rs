@@ -49,7 +49,18 @@ async fn start_service(context: Arc<Mutex<DaemonContext>>) {
     service.start().unwrap();
 }
 
-fn on_service_registered(service: ServiceRegistration, context: Option<Arc<dyn Any>>) {
+fn on_service_registered(
+    result: zeroconf::Result<ServiceRegistration>,
+    context: Option<Arc<dyn Any>>,
+) {
+    let service = match result {
+        Ok(s) => s,
+        Err(e) => {
+            warn!("on_service_registered(): `{:?}`", e);
+            return;
+        }
+    };
+
     debug!("Service registered: {:?}", service);
 
     let context = context
@@ -71,7 +82,18 @@ fn start_browser(context: Box<dyn Any>) {
     browser.start().unwrap()
 }
 
-fn on_service_discovered(service: ServiceDiscovery, context: Option<Arc<dyn Any>>) {
+fn on_service_discovered(
+    result: zeroconf::Result<ServiceDiscovery>,
+    context: Option<Arc<dyn Any>>,
+) {
+    let service = match result {
+        Ok(s) => s,
+        Err(e) => {
+            warn!("on_service_discovered(): `{:?}`", e);
+            return;
+        }
+    };
+
     let context_mtx = context
         .unwrap()
         .downcast_ref::<Arc<Mutex<DaemonContext>>>()
