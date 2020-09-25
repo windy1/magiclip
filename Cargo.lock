@@ -1040,7 +1040,7 @@ dependencies = [
 
 [[package]]
 name = "zeroconf"
-version = "0.1.0-beta"
+version = "0.2.0-beta"
 dependencies = [
  "avahi-sys",
  "bonjour-sys",
