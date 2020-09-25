@@ -4,10 +4,10 @@ use std::sync::{Arc, Mutex};
 use std::{any::Any, collections::HashMap, thread};
 use zeroconf::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
 
-static SERVICE_TYPE: &'static str = "_magiclip._tcp";
-static CLIPBOARD_HOST: &'static str = "0.0.0.0";
+static SERVICE_TYPE: &str = "_magiclip._tcp";
+static CLIPBOARD_HOST: &str = "0.0.0.0";
 static CLIPBOARD_PORT: u16 = 6060;
-static DAEMON_HOST: &'static str = "127.0.0.1";
+static DAEMON_HOST: &str = "127.0.0.1";
 static DAEMON_PORT: u16 = 6061;
 
 #[derive(Default)]
