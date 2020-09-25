@@ -43,7 +43,9 @@ dependencies = [
 
 [[package]]
 name = "avahi-sys"
-version = "0.9.0"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f792866e533338be173a9dd8b3510591c69ed43998eb0829890486d4bbd39cf"
 dependencies = [
  "bindgen",
  "libc",
@@ -88,6 +90,8 @@ checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 [[package]]
 name = "bonjour-sys"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fb769a9e04063943874cd92039ee81eee55adca48bb9615bc3dff73b57cd5aa"
 dependencies = [
  "bindgen",
  "libc",
@@ -467,7 +471,6 @@ dependencies = [
  "env_logger",
  "log",
  "magiclip-dtos",
- "pre-commit",
  "serde",
  "serde_json",
  "tokio",
@@ -632,16 +635,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c36fa947111f5c62a733b652544dd0016a43ce89619538a8ef92724a6f501a20"
 
 [[package]]
-name = "pre-commit"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0f2b9887f84ec91cd86f71c193b883209d744bc8c2a3363c6b1df88efa5af8f"
-dependencies = [
- "rustc-serialize",
- "toml",
-]
-
-[[package]]
 name = "proc-macro2"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -744,12 +737,6 @@ name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
-
-[[package]]
-name = "rustc-serialize"
-version = "0.3.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 
 [[package]]
 name = "ryu"
@@ -941,15 +928,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "736b60249cb25337bc196faa43ee12c705e426f3d55c214d73a4e7be06f92cb4"
-dependencies = [
- "rustc-serialize",
-]
-
-[[package]]
 name = "unicode-width"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1062,7 +1040,9 @@ dependencies = [
 
 [[package]]
 name = "zeroconf"
-version = "0.1.0"
+version = "0.1.0-beta"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "584ba4ba2e7ad0674da8ad310099f9158cc759b85588a157c40e0bc492e9c26b"
 dependencies = [
  "avahi-sys",
  "bonjour-sys",
@@ -1075,23 +1055,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "zeroconf-browser-example"
-version = "0.1.0"
-dependencies = [
- "zeroconf",
-]
-
-[[package]]
 name = "zeroconf-macros"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb0df536fc31d62bae298ba3ac1cc358733c2cfbfc369577d8ae51894424d23d"
 dependencies = [
  "quote",
  "syn",
-]
-
-[[package]]
-name = "zeroconf-service-example"
-version = "0.1.0"
-dependencies = [
- "zeroconf",
 ]
