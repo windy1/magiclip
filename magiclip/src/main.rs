@@ -5,7 +5,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 use magiclip::{ClipboardClient, DaemonClient};
 
-static DAEMON_HOST: &'static str = "127.0.0.1";
+static DAEMON_HOST: &str = "127.0.0.1";
 static DAEMON_PORT: u16 = 6061;
 static CLIPBOARD_PORT: u16 = 6060;
 
