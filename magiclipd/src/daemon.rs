@@ -1,6 +1,7 @@
 use super::{ClipboardServer, DaemonServer};
 use anyhow::Result;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use std::{any::Any, collections::HashMap, thread};
 use zeroconf::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
 
@@ -44,9 +45,15 @@ impl Daemon {
 
 async fn start_service(context: Arc<Mutex<DaemonContext>>) {
     let mut service = MdnsService::new(SERVICE_TYPE, CLIPBOARD_PORT);
+
     service.set_registered_callback(Box::new(on_service_registered));
     service.set_context(Box::new(context));
-    service.start().unwrap();
+
+    let event_loop = service.register().unwrap();
+
+    loop {
+        event_loop.poll(Duration::from_secs(0)).unwrap();
+    }
 }
 
 fn on_service_registered(
@@ -77,9 +84,15 @@ fn on_service_registered(
 
 fn start_browser(context: Box<dyn Any>) {
     let mut browser = MdnsBrowser::new(SERVICE_TYPE);
+
     browser.set_service_discovered_callback(Box::new(on_service_discovered));
     browser.set_context(context);
-    browser.start().unwrap()
+
+    let event_loop = browser.browse_services().unwrap();
+
+    loop {
+        event_loop.poll(Duration::from_secs(0)).unwrap();
+    }
 }
 
 fn on_service_discovered(
