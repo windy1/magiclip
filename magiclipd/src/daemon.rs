@@ -3,6 +3,7 @@ use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{any::Any, collections::HashMap, thread};
+use zeroconf::prelude::*;
 use zeroconf::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
 
 static SERVICE_TYPE: &str = "_magiclip._tcp";

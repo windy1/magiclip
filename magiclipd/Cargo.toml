@@ -14,7 +14,7 @@ serde = { version = "1.0.116", features = ["derive"] }
 serde_json = "1.0.57"
 derive-getters = "0.2.0"
 anyhow = "1.0.32"
-zeroconf = { path = "../../zeroconf-rs/zeroconf", version = "0.5.0-beta" }
+zeroconf = { path = "../../zeroconf-rs/zeroconf", version = "0.6.1" }
 magiclip-dtos = { path = "../magiclip-dtos" }
 
 [package.metadata.precommit]

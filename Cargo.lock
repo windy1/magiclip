@@ -1040,7 +1040,7 @@ dependencies = [
 
 [[package]]
 name = "zeroconf"
-version = "0.5.0-beta"
+version = "0.6.1"
 dependencies = [
  "avahi-sys",
  "bonjour-sys",
@@ -1055,7 +1055,7 @@ dependencies = [
 
 [[package]]
 name = "zeroconf-macros"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "quote",
  "syn",
