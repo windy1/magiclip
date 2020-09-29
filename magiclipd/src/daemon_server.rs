@@ -6,7 +6,6 @@ use std::str;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use zeroconf::ServiceDiscovery;
 
 #[derive(new)]
 pub struct DaemonServer {
@@ -64,14 +63,7 @@ async fn list_discovered_services(
     socket: TcpStream,
     context: Arc<Mutex<DaemonContext>>,
 ) -> Result<()> {
-    let response = serde_json::to_string(
-        &context
-            .lock()
-            .unwrap()
-            .discovered()
-            .values()
-            .collect::<Vec<&ServiceDiscovery>>(),
-    )?;
+    let response = serde_json::to_string(&context.lock().unwrap().discovered())?;
 
     write_response(socket, &response)
         .await

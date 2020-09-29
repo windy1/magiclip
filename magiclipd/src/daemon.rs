@@ -1,8 +1,9 @@
 use super::{ClipboardServer, DaemonServer};
 use anyhow::Result;
+use std::any::Any;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::Duration;
-use std::{any::Any, collections::HashMap, thread};
 use zeroconf::prelude::*;
 use zeroconf::{MdnsBrowser, MdnsService, ServiceDiscovery, ServiceRegistration};
 
@@ -20,7 +21,7 @@ pub struct Daemon {
 #[derive(Default, Debug, Getters)]
 pub struct DaemonContext {
     service_name: String,
-    discovered: HashMap<String, ServiceDiscovery>,
+    discovered: Vec<ServiceDiscovery>,
 }
 
 impl Daemon {
@@ -123,5 +124,5 @@ fn on_service_discovered(
 
     debug!("Service discovered: {:?}", &service);
 
-    context.discovered.insert(service.name().clone(), service);
+    context.discovered.push(service);
 }

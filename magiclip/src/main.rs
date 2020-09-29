@@ -4,6 +4,7 @@ use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 use magiclip::{ClipboardClient, DaemonClient};
+use zeroconf::ServiceDiscovery;
 
 static DAEMON_HOST: &str = "127.0.0.1";
 static DAEMON_PORT: u16 = 6061;
@@ -24,16 +25,16 @@ async fn main() -> Result<()> {
 
     let items = &discovered_services
         .iter()
-        .map(|s| s.name())
-        .collect::<Vec<&String>>();
+        .map(display_name)
+        .collect::<Vec<String>>();
 
     select.items(&items).default(0);
 
-    let selected_name = items[select.interact()?];
+    let selected_name = &items[select.interact()?];
 
     let service = discovered_services
         .iter()
-        .find(|s| s.name() == selected_name)
+        .find(|s| &display_name(s) == selected_name)
         .unwrap();
 
     let contents = ClipboardClient::new(service.address(), CLIPBOARD_PORT)?
@@ -64,4 +65,8 @@ fn create_select_theme() -> ColorfulTheme {
     theme.active_item_prefix = style("▸".to_string()).cyan();
     theme.active_item_style = Style::new().cyan().underlined();
     theme
+}
+
+fn display_name(service: &ServiceDiscovery) -> String {
+    format!("{} ({})", service.name(), service.address())
 }
