@@ -1,5 +1,5 @@
 use super::{ClipboardServer, DaemonServer};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use magiclip_dtos::UniqueService;
 use std::any::Any;
 use std::collections::HashSet;
@@ -47,39 +47,28 @@ pub struct DaemonContext {
     discovered: HashSet<UniqueService>,
 }
 
-async fn start_service(context: Arc<Mutex<DaemonContext>>) {
+async fn start_service(context: Arc<Mutex<DaemonContext>>) -> Result<()> {
     let mut service = MdnsService::new(SERVICE_TYPE, CLIPBOARD_PORT);
 
     service.set_registered_callback(Box::new(on_service_registered));
     service.set_context(Box::new(context));
 
-    let event_loop = service.register().unwrap();
+    let event_loop = service.register()?;
 
     loop {
-        event_loop.poll(Duration::from_secs(0)).unwrap();
+        event_loop.poll(Duration::from_secs(0))?;
     }
 }
 
 fn on_service_registered(
-    result: zeroconf::Result<ServiceRegistration>,
+    service: zeroconf::Result<ServiceRegistration>,
     context: Option<Arc<dyn Any>>,
 ) {
-    let service = match result {
-        Ok(s) => s,
-        Err(e) => {
-            warn!("on_service_registered(): `{:?}`", e);
-            return;
-        }
-    };
+    let service = service.unwrap();
 
     debug!("Service registered: {:?}", service);
 
-    let context = context
-        .as_ref()
-        .unwrap()
-        .downcast_ref::<Arc<Mutex<DaemonContext>>>()
-        .unwrap()
-        .clone();
+    let context = unwrap_context(&context);
 
     context.lock().unwrap().service_name = service.name().clone();
 
@@ -111,12 +100,7 @@ fn on_service_discovered(
         }
     };
 
-    let context_mtx = context
-        .unwrap()
-        .downcast_ref::<Arc<Mutex<DaemonContext>>>()
-        .unwrap()
-        .clone();
-
+    let context_mtx = unwrap_context(&context);
     let mut context = context_mtx.lock().unwrap();
 
     if &context.service_name == service.name() {
@@ -130,4 +114,12 @@ fn on_service_discovered(
         service.name().to_owned(),
         service.host_name().to_owned(),
     ));
+}
+
+fn unwrap_context(c: &Option<Arc<dyn Any>>) -> Arc<Mutex<DaemonContext>> {
+    c.as_ref()
+        .unwrap()
+        .downcast_ref::<Arc<Mutex<DaemonContext>>>()
+        .unwrap()
+        .clone()
 }
