@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use magiclip_dtos::net;
-use std::net::SocketAddr;
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::str;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -12,7 +12,13 @@ pub struct ClipboardClient {
 impl ClipboardClient {
     pub fn new(host: &str, port: u16) -> Result<Self> {
         Ok(Self {
-            address: SocketAddr::new(host.parse().context("could not parse IP address")?, port),
+            // address: SocketAddr::new(host.parse().context("could not parse IP address")?, port),
+            address: format!("{}:{}", host, port)
+                .as_str()
+                .to_socket_addrs()
+                .context("could not parse socket address")?
+                .next()
+                .unwrap(),
         })
     }
 

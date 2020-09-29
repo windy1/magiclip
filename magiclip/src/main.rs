@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
         .find(|s| &display_name(s) == selected_name)
         .unwrap();
 
-    let contents = ClipboardClient::new(service.address(), CLIPBOARD_PORT)?
+    let contents = ClipboardClient::new(service.host_name(), CLIPBOARD_PORT)?
         .fetch_clipboard()
         .await?;
 
@@ -68,5 +68,5 @@ fn create_select_theme() -> ColorfulTheme {
 }
 
 fn display_name(service: &ServiceDiscovery) -> String {
-    format!("{} ({})", service.name(), service.address())
+    format!("{} ({})", service.name(), service.host_name())
 }
