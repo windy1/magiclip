@@ -1,5 +1,6 @@
 use super::{ClipboardServer, DaemonServer};
 use anyhow::Result;
+use magiclip_dtos::UniqueService;
 use std::any::Any;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
@@ -44,12 +45,6 @@ impl Daemon {
 pub struct DaemonContext {
     service_name: String,
     discovered: HashSet<UniqueService>,
-}
-
-#[derive(new, Debug, Clone, PartialEq, Eq, Hash, Getters, Serialize, Deserialize)]
-pub struct UniqueService {
-    name: String,
-    host_name: String,
 }
 
 async fn start_service(context: Arc<Mutex<DaemonContext>>) {

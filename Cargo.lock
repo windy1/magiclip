@@ -456,6 +456,8 @@ dependencies = [
 name = "magiclip-dtos"
 version = "0.1.0"
 dependencies = [
+ "derive-getters",
+ "derive-new",
  "serde",
  "serde_json",
 ]

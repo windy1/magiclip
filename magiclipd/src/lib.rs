@@ -6,10 +6,6 @@ extern crate log;
 extern crate derive_getters;
 #[macro_use]
 extern crate anyhow;
-#[macro_use]
-extern crate serde;
-extern crate clipboard;
-extern crate tokio;
 
 mod clipboard_server;
 mod daemon;

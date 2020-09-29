@@ -1,11 +1,10 @@
 use anyhow::{Context, Result};
 use magiclip_dtos::net;
-use magiclip_dtos::DaemonPayload;
+use magiclip_dtos::{DaemonPayload, UniqueService};
 use std::net::SocketAddr;
 use std::str;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use zeroconf::ServiceDiscovery;
 
 pub struct DaemonClient {
     address: SocketAddr,
@@ -18,7 +17,7 @@ impl DaemonClient {
         })
     }
 
-    pub async fn list_discovered_services(&self) -> Result<Vec<ServiceDiscovery>> {
+    pub async fn list_discovered_services(&self) -> Result<Vec<UniqueService>> {
         serde_json::from_str(&self.connect(DaemonPayload::ListDiscoveredServices).await?)
             .context("could not deserialize daemon payload")
     }

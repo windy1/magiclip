@@ -1,10 +1,20 @@
 #[macro_use]
 extern crate serde;
+#[macro_use]
+extern crate derive_getters;
+#[macro_use]
+extern crate derive_new;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum DaemonPayload {
     ListDiscoveredServices,
     SetClipboard(String),
+}
+
+#[derive(new, Debug, Clone, PartialEq, Eq, Hash, Getters, Serialize, Deserialize)]
+pub struct UniqueService {
+    name: String,
+    host_name: String,
 }
 
 pub mod net {

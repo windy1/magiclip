@@ -4,7 +4,7 @@ use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 use magiclip::{ClipboardClient, DaemonClient};
-use zeroconf::ServiceDiscovery;
+use magiclip_dtos::UniqueService;
 
 static DAEMON_HOST: &str = "127.0.0.1";
 static DAEMON_PORT: u16 = 6061;
@@ -67,6 +67,6 @@ fn create_select_theme() -> ColorfulTheme {
     theme
 }
 
-fn display_name(service: &ServiceDiscovery) -> String {
+fn display_name(service: &UniqueService) -> String {
     format!("{} ({})", service.name(), service.host_name())
 }
