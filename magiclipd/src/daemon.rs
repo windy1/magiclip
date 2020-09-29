@@ -1,6 +1,7 @@
 use super::{ClipboardServer, DaemonServer};
 use anyhow::Result;
 use std::any::Any;
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -16,12 +17,6 @@ static DAEMON_PORT: u16 = 6061;
 #[derive(Default)]
 pub struct Daemon {
     context: Arc<Mutex<DaemonContext>>,
-}
-
-#[derive(Default, Debug, Getters)]
-pub struct DaemonContext {
-    service_name: String,
-    discovered: Vec<ServiceDiscovery>,
 }
 
 impl Daemon {
@@ -43,6 +38,18 @@ impl Daemon {
             .start()
             .await
     }
+}
+
+#[derive(Default, Debug, Getters)]
+pub struct DaemonContext {
+    service_name: String,
+    discovered: HashSet<UniqueService>,
+}
+
+#[derive(new, Debug, Clone, PartialEq, Eq, Hash, Getters, Serialize, Deserialize)]
+pub struct UniqueService {
+    name: String,
+    host_name: String,
 }
 
 async fn start_service(context: Arc<Mutex<DaemonContext>>) {
@@ -124,5 +131,8 @@ fn on_service_discovered(
 
     debug!("Service discovered: {:?}", &service);
 
-    context.discovered.push(service);
+    context.discovered.insert(UniqueService::new(
+        service.name().to_owned(),
+        service.host_name().to_owned(),
+    ));
 }
