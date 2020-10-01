@@ -1,5 +1,5 @@
 use super::{ClipboardServer, DaemonServer};
-use anyhow::{Context, Result};
+use anyhow::Result;
 use magiclip_dtos::UniqueService;
 use std::any::Any;
 use std::collections::HashSet;

@@ -4,23 +4,37 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+cd $DIR
+
+cargo clean
+cargo test --release
+cargo install --path .
+
 macos_install() {
     DAEMON_PLIST=magiclipd.plist
     TARGET=/Library/LaunchDaemons
 
-    cd $DIR
-
-    cargo clean
-    cargo test --release
-    cargo install --path .
-
     cp $DAEMON_PLIST $TARGET
+
     launchctl unload -w "$TARGET/$DAEMON_PLIST"
     launchctl load -w "$TARGET/$DAEMON_PLIST"
 }
 
+linux_install() {
+    SERVICE=magiclipd.service
+    TARGET=/etc/systemd/system/
+
+    cp $SERVICE $TARGET
+
+    systemctl stop magiclipd
+    systemctl start magiclipd
+    systemctl enable magiclipd
+}
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
     macos_install
+elif [[ "$OSTYPE" == "linux-gnu" ]]; then
+    linux_install
 else
     echo "Unsupported operating system"
     exit 1

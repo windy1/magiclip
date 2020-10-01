@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=walker
-ExecStart=/usr/bin/env /home/walker/code/personal/magiclip/target/debug/magiclip
+ExecStart=$HOME/.cargo/bin/magiclipd
 
 [Install]
 WantedBy=multi-user.target
