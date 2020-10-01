@@ -26,8 +26,7 @@ linux_install() {
 
     cp $SERVICE $TARGET
 
-    systemctl stop magiclipd
-    systemctl start magiclipd
+    systemctl daemon-reload
     systemctl enable magiclipd
 }
 

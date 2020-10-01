@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=walker
-ExecStart=$HOME/.cargo/bin/magiclipd
+ExecStart=%h/.cargo/bin/magiclipd
 
 [Install]
 WantedBy=multi-user.target
