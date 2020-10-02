@@ -3,19 +3,20 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+BIN=../target/release/magiclipd
+# USER=${SUDO_USER:-$USER}
 
 cd $DIR
 
-cargo clean
-cargo test --release
 cargo build --release
 
 macos_install() {
-    DAEMON_PLIST=magiclipd.plist
-    TARGET=/Library/LaunchDaemons
+    DAEMON=magiclipd.plist
+    DAEMON_TARGET=/Library/LaunchDaemons
+    BIN_TARGET=/usr/local/bin/
 
-    cp ../target/release/magiclipd /usr/local/bin/
-    cp $DAEMON_PLIST $TARGET
+    cp $BIN $BIN_TARGET
+    cp $DAEMON $DAEMON_TARGET
 
     launchctl unload -w "$TARGET/$DAEMON_PLIST" || echo "No previous installation to unload"
     launchctl load -w "$TARGET/$DAEMON_PLIST"
@@ -23,11 +24,12 @@ macos_install() {
 
 linux_install() {
     SERVICE=magiclipd.service
-    TARGET=/lib/systemd/system/
+    SERVICE_TARGET=/lib/systemd/system/
+    BIN_TARGET=/usr/bin/
 
-    cp ../target/release/magiclipd /usr/bin/
     systemctl stop magiclipd || echo "No previous installation to stop"
-    cp $SERVICE $TARGET
+    cp $BIN $BIN_TARGET
+    cp $SERVICE $SERVICE_TARGET
 
     systemctl daemon-reload
     systemctl start magiclipd

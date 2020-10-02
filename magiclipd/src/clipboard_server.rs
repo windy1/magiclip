@@ -21,8 +21,10 @@ impl ClipboardServer {
             debug!("New clipboard connection: {:?}", addr);
 
             tokio::spawn(async move {
+                debug!("Current user: {}", whoami::username());
                 let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
                 let contents = clipboard.get_contents().unwrap_or_else(|_| String::new());
+                debug!("Sending: {:?}", contents);
                 socket.write(contents.as_bytes()).await
             });
         }
