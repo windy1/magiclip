@@ -12,6 +12,8 @@ static CLIPBOARD_PORT: u16 = 6060;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    env_logger::init();
+
     let daemon = DaemonClient::new(DAEMON_HOST, DAEMON_PORT)?;
     let discovered_services = daemon.list_discovered_services().await?;
 

@@ -22,6 +22,8 @@ impl ClipboardClient {
     }
 
     pub async fn fetch_clipboard(&self) -> Result<Option<String>> {
+        debug!("Retrieving clipboard: `{:?}`", self.address);
+
         let mut conn = TcpStream::connect(self.address)
             .await
             .context("could not connect to clipboard server")?;

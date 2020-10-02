@@ -445,6 +445,8 @@ dependencies = [
  "colored",
  "console",
  "dialoguer",
+ "env_logger",
+ "log",
  "magiclip-dtos",
  "serde",
  "serde_json",
