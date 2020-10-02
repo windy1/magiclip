@@ -7,8 +7,9 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-User=walker
-ExecStart=%h/.cargo/bin/magiclipd
+User=%u
+Environment=RUST_LOG=debug
+ExecStart=/usr/bin/magiclipd
 
 [Install]
 WantedBy=multi-user.target
