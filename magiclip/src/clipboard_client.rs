@@ -12,7 +12,6 @@ pub struct ClipboardClient {
 impl ClipboardClient {
     pub fn new(host: &str, port: u16) -> Result<Self> {
         Ok(Self {
-            // address: SocketAddr::new(host.parse().context("could not parse IP address")?, port),
             address: format!("{}:{}", host, port)
                 .as_str()
                 .to_socket_addrs()
