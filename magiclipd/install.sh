@@ -8,16 +8,16 @@ cd $DIR
 
 cargo clean
 cargo test --release
+cargo build --release
 
 macos_install() {
-
     DAEMON_PLIST=magiclipd.plist
     TARGET=/Library/LaunchDaemons
 
-    cargo install --path .
+    cp ../target/release/magiclipd /usr/local/bin/
     cp $DAEMON_PLIST $TARGET
 
-    launchctl unload -w "$TARGET/$DAEMON_PLIST"
+    launchctl unload -w "$TARGET/$DAEMON_PLIST" || echo "No previous installation to unload"
     launchctl load -w "$TARGET/$DAEMON_PLIST"
 }
 
@@ -25,10 +25,8 @@ linux_install() {
     SERVICE=magiclipd.service
     TARGET=/lib/systemd/system/
 
-    cargo build --release
     cp ../target/release/magiclipd /usr/bin/
     systemctl stop magiclipd || echo "No previous installation to stop"
-
     cp $SERVICE $TARGET
 
     systemctl daemon-reload

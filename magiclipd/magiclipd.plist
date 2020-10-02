@@ -3,10 +3,10 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>$HOME/.cargo/bin/magiclipd</string>
+    <string>magiclipd</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$HOME/.cargo/bin/magiclipd</string>
+        <string>/usr/local/bin/magiclipd</string>
     </array>
     <key>KeepAlive</key>
     <true/>
