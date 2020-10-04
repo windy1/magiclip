@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 USER=${SUDO_USER:-$USER}
@@ -21,10 +21,21 @@ macos_install() {
 <dict>
     <key>Label</key>
     <string>magiclipd</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>RUST_LOG</key>
+        <string>debug</string>
+    </dict>
     <key>ProgramArguments</key>
     <array>
         <string>$HOME/.cargo/bin/magiclipd</string>
     </array>
+    <key>UserName</key>
+    <string>$USER</string>
+    <key>StandardOutPath</key>
+    <string>$HOME/.magiclip/magiclipd.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/.magiclip/magiclipd.log</string>
     <key>KeepAlive</key>
     <true/>
 </dict>
@@ -32,7 +43,6 @@ macos_install() {
 EOF
 
     launchctl load -w $DAEMON_TARGET
-    echo "Done"
 }
 
 linux_install() {
