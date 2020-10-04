@@ -52,7 +52,7 @@ Restart=always
 RestartSec=1
 User=$USER
 Environment=RUST_LOG=debug
-Environment=DISPLAY=:1
+Environment=DISPLAY=$DISPLAY
 ExecStart=$HOME/.cargo/bin/magiclipd
 
 [Install]
