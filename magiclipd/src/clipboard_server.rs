@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clipboard::{ClipboardContext, ClipboardProvider};
+use std::env;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 
@@ -21,7 +22,10 @@ impl ClipboardServer {
             debug!("New clipboard connection: {:?}", addr);
 
             tokio::spawn(async move {
-                debug!("Current user: {}", whoami::username());
+                let display = env::var("DISPLAY").unwrap_or_else(|_| "<none>".to_string());
+                debug!("USER={:?}", whoami::username());
+                debug!("DISPLAY={:?}", display);
+
                 let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
                 let contents = clipboard.get_contents().unwrap_or_else(|_| String::new());
                 debug!("Sending: {:?}", contents);
