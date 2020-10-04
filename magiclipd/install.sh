@@ -10,15 +10,29 @@ cd $DIR
 cargo install --path .
 
 macos_install() {
-    DAEMON=magiclipd.plist
-    DAEMON_TARGET=/Library/LaunchDaemons
-    BIN_TARGET=/usr/local/bin/
+    DAEMON_TARGET=/Library/LaunchDaemons/magiclipd.plist
 
-    cp $BIN $BIN_TARGET
-    cp $DAEMON $DAEMON_TARGET
+    launchctl unload -w $DAEMON_TARGET || echo "No previous installation to unload"
 
-    launchctl unload -w "$TARGET/$DAEMON_PLIST" || echo "No previous installation to unload"
-    launchctl load -w "$TARGET/$DAEMON_PLIST"
+    cat << EOF > $DAEMON_TARGET
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>magiclipd</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$HOME/.cargo/bin/magiclipd</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+    launchctl load -w $DAEMON_TARGET
+    echo "Done"
 }
 
 linux_install() {
