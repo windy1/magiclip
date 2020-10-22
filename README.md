@@ -1,9 +1,22 @@
 # magiclip
 
+## Installing
+
+On Linux:
 ```bash
 $ sudo apt install xorg-dev libxcb-shape0-dev libxcb-xfixes0-dev clang
-$ cargo build
 ```
 
-1. Publish Avahi/Bonjour service
-2. Discover services on network
+```bash
+$ git clone https://github.com/windy1/magiclip
+$ cd magiclip
+$ cargo install --path magiclip
+$ sudo ./magiclipd/install.sh
+$ sudo ./magiclipd/start.sh
+```
+
+## Running
+
+```bash
+$ magiclip
+```
