@@ -7,6 +7,7 @@ On Linux:
 $ sudo apt install xorg-dev libxcb-shape0-dev libxcb-xfixes0-dev clang
 ```
 
+On everything:
 ```bash
 $ git clone https://github.com/windy1/magiclip
 $ cd magiclip
