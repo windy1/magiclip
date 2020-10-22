@@ -2,9 +2,9 @@
 
 set -e
 
-# macos_start() {
-#     # TODO
-# }
+macos_start() {
+    magiclipd < /dev/null &> /dev/null &
+}
 
 linux_start() {
     systemctl start magiclipd
