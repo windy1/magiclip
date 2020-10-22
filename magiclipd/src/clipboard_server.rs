@@ -36,7 +36,7 @@ impl ClipboardServer {
 }
 
 fn get_clipboard_contents() -> Result<String> {
-    let mut clipboard: Option<ClipboardContext> = ClipboardProvider::new().ok();
+    let clipboard: Option<ClipboardContext> = ClipboardProvider::new().ok();
     match clipboard {
         Some(mut clp) => Ok(clp.get_contents().unwrap_or_else(|_| String::new())),
         None => {
