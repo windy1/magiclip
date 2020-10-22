@@ -1,6 +1,6 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clipboard::{ClipboardContext, ClipboardProvider};
-use std::env;
+use std::{env, fs};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 
@@ -23,14 +23,25 @@ impl ClipboardServer {
 
             tokio::spawn(async move {
                 let display = env::var("DISPLAY").unwrap_or_else(|_| "<none>".to_string());
+
                 debug!("USER={:?}", whoami::username());
                 debug!("DISPLAY={:?}", display);
 
-                let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
-                let contents = clipboard.get_contents().unwrap_or_else(|_| String::new());
-                debug!("Sending: {:?}", contents);
+                let contents = get_clipboard_contents().unwrap();
+                debug!("Sending: `{:?}`", contents);
                 socket.write(contents.as_bytes()).await
             });
+        }
+    }
+}
+
+fn get_clipboard_contents() -> Result<String> {
+    let mut clipboard: Option<ClipboardContext> = ClipboardProvider::new().ok();
+    match clipboard {
+        Some(mut clp) => Ok(clp.get_contents().unwrap_or_else(|_| String::new())),
+        None => {
+            let fname = format!("{}/.magiclip/clipboard.txt", env::var("HOME").unwrap());
+            fs::read_to_string(&fname).context("could not read clipboard file")
         }
     }
 }

@@ -25,6 +25,8 @@ macos_install() {
     <dict>
         <key>RUST_LOG</key>
         <string>debug</string>
+        <key>RUST_BACKTRACE</key>
+        <string>1</string>
     </dict>
     <key>ProgramArguments</key>
     <array>

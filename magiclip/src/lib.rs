@@ -6,5 +6,7 @@ extern crate log;
 mod clipboard_client;
 mod daemon_client;
 
+pub mod ops;
+
 pub use clipboard_client::*;
 pub use daemon_client::*;
