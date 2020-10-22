@@ -22,9 +22,10 @@ impl ClipboardServer {
             debug!("New clipboard connection: {:?}", addr);
 
             tokio::spawn(async move {
-                let display = env::var("DISPLAY").unwrap_or_else(|_| "<none>".to_string());
+                let display = crate::env::var("DISPLAY");
+                let user = crate::env::var("USER");
 
-                debug!("USER={:?}", whoami::username());
+                debug!("USER={:?}", user);
                 debug!("DISPLAY={:?}", display);
 
                 let contents = get_clipboard_contents().unwrap();

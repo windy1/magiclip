@@ -1,6 +1,5 @@
 use super::DaemonContext;
 use anyhow::{Context, Result};
-use clipboard::{ClipboardContext, ClipboardProvider};
 use magiclip_dtos::{net, DaemonPayload};
 use std::str;
 use std::sync::{Arc, Mutex};
@@ -55,7 +54,6 @@ async fn handle_conn(mut socket: TcpStream, context: Arc<Mutex<DaemonContext>>) 
 
     match payload {
         DaemonPayload::ListDiscoveredServices => list_discovered_services(socket, context).await,
-        DaemonPayload::SetClipboard(contents) => set_clipboard(socket, &contents).await,
     }
 }
 
@@ -68,15 +66,6 @@ async fn list_discovered_services(
     write_response(socket, &response)
         .await
         .context("could not write discovered services to socket")
-}
-
-async fn set_clipboard(socket: TcpStream, contents: &str) -> Result<()> {
-    let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
-    clipboard.set_contents(contents.to_string()).unwrap();
-
-    write_response(socket, "OK")
-        .await
-        .context("could not write response to socket")
 }
 
 async fn write_response(mut socket: TcpStream, response: &str) -> Result<()> {

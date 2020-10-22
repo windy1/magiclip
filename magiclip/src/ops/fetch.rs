@@ -1,5 +1,6 @@
 use crate::{ClipboardClient, DaemonClient};
-use anyhow::{Context, Result};
+use anyhow::Result;
+use clipboard::{ClipboardContext, ClipboardProvider};
 use colored::*;
 use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
@@ -42,11 +43,8 @@ pub async fn fetch_clipboard() -> Result<()> {
 
     match contents {
         Some(c) => {
-            daemon
-                .set_clipboard(&c)
-                .await
-                .context("could not push clipboard to daemon")?;
-
+            let mut clipboard: ClipboardContext = ClipboardProvider::new().unwrap();
+            clipboard.set_contents(c.to_string()).unwrap();
             println!("{} {}", "Copied to clipboard:".green(), c.bold());
         }
         None => eprintln("clipboard is empty"),

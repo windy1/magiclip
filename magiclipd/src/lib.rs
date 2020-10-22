@@ -14,3 +14,9 @@ mod daemon_server;
 pub use clipboard_server::*;
 pub use daemon::*;
 pub use daemon_server::*;
+
+pub(crate) mod env {
+    pub fn var(k: &str) -> String {
+        std::env::var(k).unwrap_or_else(|_| "<none>".to_string())
+    }
+}
