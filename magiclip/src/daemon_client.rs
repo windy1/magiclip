@@ -22,6 +22,17 @@ impl DaemonClient {
             .context("could not deserialize daemon payload")
     }
 
+    pub async fn set_clipboard(&self, contents: &str) -> Result<()> {
+        let response = self
+            .connect(DaemonPayload::SetClipboard(contents.to_string()))
+            .await?;
+
+        match response.as_str() {
+            "OK" => Ok(()),
+            e => Err(anyhow!("daemon responded with error: `{}`", e)),
+        }
+    }
+
     async fn connect(&self, payload: DaemonPayload) -> Result<String> {
         let mut conn = TcpStream::connect(self.address)
             .await
